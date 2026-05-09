@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchPopularMovies, fetchMovies } from "../redux/actions";
+import { SafeAreaView } from "react-native-safe-area-context";
 import MovieCard      from "../components/MovieCard";
 import SearchBar      from "../components/SearchBar";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -39,7 +40,7 @@ const HomeScreen = ({ navigation }) => {
     if (moviesLoading && displayMovies.length === 0) return <LoadingSpinner />;
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <SearchBar value={search} onChangeText={setSearch} />
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -73,19 +74,19 @@ const HomeScreen = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={<Text style={styles.empty}>Không tìm thấy phim nào</Text>}
             />
-        </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container:       { flex: 1, backgroundColor: "#0a0a0a" },
-    genreRow:        { maxHeight: 44 },
-    genreContent:    { paddingHorizontal: 12, paddingVertical: 6 },
-    chip:            { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: "#2a2a2a", backgroundColor: "#1c1c1c", marginRight: 8 },
+    genreRow:        { height: 40, minHeight: 40, maxHeight: 40, flexGrow: 0, marginTop: 12, marginBottom: 16 }, 
+    genreContent:    { paddingHorizontal: 16 }, 
+    chip:            { height: "100%",paddingHorizontal: 20, borderRadius: 20, borderWidth: 1, borderColor: "#2a2a2a", backgroundColor: "#1c1c1c", marginRight: 10,justifyContent: "center", alignItems: "center" },
     chipActive:      { backgroundColor: "#e50914", borderColor: "#e50914" },
-    chipText:        { color: "#b3b3b3", fontSize: 13 },
+    chipText:        { color: "#b3b3b3", fontSize: 14, fontWeight: "500" },
     chipTextActive:  { color: "#fff", fontWeight: "bold" },
-    heading:         { color: "#fff", fontSize: 18, fontWeight: "bold", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+    heading:         { color: "#fff", fontSize: 18, fontWeight: "bold", paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
     list:            { paddingHorizontal: 16, paddingBottom: 24 },
     empty:           { color: "#6e6e6e", textAlign: "center", marginTop: 60, fontSize: 15 },
 });
