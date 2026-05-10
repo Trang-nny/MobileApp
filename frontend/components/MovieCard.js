@@ -6,7 +6,11 @@ const MovieCard = ({ title, genre, year, rating, image, poster_url, isFavorite, 
     const source = image ? image : { uri: poster_url };
     return (
         <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-            <Image source={source} style={styles.image} />
+            <Image
+                source={source}
+                style={styles.image}
+                resizeMode="cover"
+            />
             <View style={styles.info}>
                 <Text style={styles.title} numberOfLines={2}>{title}</Text>
                 <Text style={styles.genre}  numberOfLines={1}>{genre}</Text>
@@ -30,7 +34,7 @@ const MovieCard = ({ title, genre, year, rating, image, poster_url, isFavorite, 
 
 const styles = StyleSheet.create({
     card:   { backgroundColor: "#1c1c1c", borderRadius: 8, overflow: "hidden", marginBottom: 14, flexDirection: "row", borderWidth: 1, borderColor: "#2a2a2a" },
-    image:  { width: 90, height: 120, resizeMode: "cover" },
+    image:  { width: 90, height: 120 },
     info:   { flex: 1, padding: 12, justifyContent: "center" },
     title:  { fontSize: 16, fontWeight: "bold", color: "#ffffff", marginBottom: 4 },
     genre:  { fontSize: 12, color: "#b3b3b3", marginBottom: 8 },

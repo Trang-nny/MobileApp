@@ -2,7 +2,7 @@ var express    = require("express");
 var bodyParser = require("body-parser");
 var cors       = require("cors");
 var mysql      = require("mysql2");
-var bcrypt     = require("bcrypt");
+var crypto     = require("crypto");   // có sẵn trong Node.js, không cần cài
 var jwt        = require("jsonwebtoken");
 
 var app = express();
@@ -22,6 +22,11 @@ con.connect(err => {
     if (err) console.log("Lỗi kết nối: " + err.message);
     else     console.log("Connected MySQL MovieApp DB!!!");
 });
+
+// Hàm mã hoá mật khẩu bằng SHA-256
+function hashPassword(password) {
+    return crypto.createHash("sha256").update(password).digest("hex");
+}
 
 // ── Middleware xác thực token ──────────────────────────────
 function authMiddleware(req, res, next) {
@@ -47,8 +52,8 @@ app.post("/api/v1/auth/register", (req, res) => {
 
     if (!full_name || !email || !password)
         return res.status(400).send({ message: "Vui lòng nhập đầy đủ thông tin" });
-    if (password.length < 8)
-        return res.status(400).send({ message: "Mật khẩu phải có ít nhất 8 ký tự" });
+    if (password.length < 6)
+        return res.status(400).send({ message: "Mật khẩu phải có ít nhất 6 ký tự" });
 
     var checkSql = "SELECT id FROM users WHERE email = ?";
     con.query(checkSql, [email], (err, results) => {
@@ -56,13 +61,11 @@ app.post("/api/v1/auth/register", (req, res) => {
         if (results.length > 0)
             return res.status(409).send({ message: "Email này đã được đăng ký" });
 
-        bcrypt.hash(password, 10, (err, hashed) => {
+        var hashed    = hashPassword(password);
+        var insertSql = "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)";
+        con.query(insertSql, [full_name, email, hashed], (err, result) => {
             if (err) return res.status(500).send(err);
-            var insertSql = "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)";
-            con.query(insertSql, [full_name, email, hashed], (err, result) => {
-                if (err) return res.status(500).send(err);
-                res.status(201).send({ message: "Đăng ký thành công", userId: result.insertId });
-            });
+            res.status(201).send({ message: "Đăng ký thành công", userId: result.insertId });
         });
     });
 });
@@ -80,22 +83,26 @@ app.post("/api/v1/auth/login", (req, res) => {
         if (results.length === 0)
             return res.status(401).send({ message: "Email hoặc mật khẩu không đúng" });
 
-        var user = results[0];
-        bcrypt.compare(password, user.password, (err, isMatch) => {
-            if (err) return res.status(500).send(err);
-            if (!isMatch)
-                return res.status(401).send({ message: "Email hoặc mật khẩu không đúng" });
+        var user           = results[0];
+        var storedPassword = user.password;
+        var hashedInput    = hashPassword(password);
 
-            var token = jwt.sign(
-                { id: user.id, email: user.email },
-                JWT_SECRET,
-                { expiresIn: "7d" }
-            );
-            res.status(200).send({
-                message: "Đăng nhập thành công",
-                token: token,
-                user: { id: user.id, full_name: user.full_name, email: user.email }
-            });
+        // So sánh SHA-256 hash
+        // Đồng thời hỗ trợ mật khẩu plain text (3 tài khoản mẫu cũ trong DB)
+        var isMatch = (hashedInput === storedPassword) || (password === storedPassword);
+
+        if (!isMatch)
+            return res.status(401).send({ message: "Email hoặc mật khẩu không đúng" });
+
+        var token = jwt.sign(
+            { id: user.id, email: user.email },
+            JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+        res.status(200).send({
+            message: "Đăng nhập thành công",
+            token: token,
+            user: { id: user.id, full_name: user.full_name, email: user.email }
         });
     });
 });
@@ -173,7 +180,21 @@ app.get("/api/v1/movies", (req, res) => {
 
     con.query(sql, params, (err, movies) => {
         if (err) return res.status(500).send(err);
-        res.status(200).send(movies);
+        if (movies.length === 0) return res.status(200).send([]);
+
+        var ids = movies.map(m => m.id);
+        var genreSql = `SELECT mg.movie_id, g.name 
+                        FROM movie_genres mg 
+                        JOIN genres g ON mg.genre_id = g.id 
+                        WHERE mg.movie_id IN (?)`;
+        con.query(genreSql, [ids], (err, genreRows) => {
+            if (err) return res.status(500).send(err);
+            var result = movies.map(m => ({
+                ...m,
+                genres: genreRows.filter(g => g.movie_id === m.id).map(g => g.name)
+            }));
+            res.status(200).send(result);
+        });
     });
 });
 
@@ -279,4 +300,4 @@ app.put("/api/v1/history", authMiddleware, (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────
-app.listen(5555, () => console.log("MovieApp Server running at http://192.168.1.167:5555"));
+app.listen(5555, () => console.log("MovieApp Server running at http://192.168.1.158:5555"));

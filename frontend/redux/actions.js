@@ -5,7 +5,7 @@ export const SET_SELECTED_MOVIE  = "SET_SELECTED_MOVIE";
 export const SET_MOVIES_LOADING  = "SET_MOVIES_LOADING";
 export const SET_MOVIES_ERROR    = "SET_MOVIES_ERROR";
 
-const API = "http://192.168.1.167:5555/api/v1";
+const API = "http://192.168.1.158:5555/api/v1";   // ← SỬA IP Ở ĐÂY
 
 export const fetchPopularMovies = () => async (dispatch) => {
     dispatch({ type: SET_MOVIES_LOADING, payload: true });
