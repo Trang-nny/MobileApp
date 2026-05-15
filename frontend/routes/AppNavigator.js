@@ -10,6 +10,9 @@ import FavoritesScreen   from "../screens/FavoritesScreen";
 import ProfileScreen     from "../screens/ProfileScreen";
 import LoginScreen       from "../screens/LoginScreen";
 import RegisterScreen    from "../screens/RegisterScreen";
+import HistoryScreen     from "../screens/HistoryScreen";       // Sprint 3
+import EditProfileScreen from "../screens/EditProfileScreen";   // Sprint 3
+import VideoPlayerScreen from "../screens/VideoPlayerScreen";   // Sprint 3
 
 const Tab   = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -19,11 +22,15 @@ function MainTabs() {
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
-                tabBarStyle:            { backgroundColor: "#000000", borderTopColor: "#1c1c1c" },
-                tabBarActiveTintColor:  "#ffffff",
-                tabBarInactiveTintColor:"#6e6e6e",
+                tabBarStyle:             { backgroundColor: "#000000", borderTopColor: "#1c1c1c" },
+                tabBarActiveTintColor:   "#ffffff",
+                tabBarInactiveTintColor: "#6e6e6e",
                 tabBarIcon: ({ focused, color, size }) => {
-                    const map = { Home: ["home","home-outline"], Favorites: ["heart","heart-outline"], Profile: ["person","person-outline"] };
+                    const map = {
+                        Home:      ["home",   "home-outline"  ],
+                        Favorites: ["heart",  "heart-outline" ],
+                        Profile:   ["person", "person-outline"],
+                    };
                     return <Ionicons name={map[route.name][focused ? 0 : 1]} size={size} color={color} />;
                 },
             })}
@@ -38,16 +45,27 @@ function MainTabs() {
 export default function AppNavigator() {
     return (
         <NavigationContainer>
-            <Stack.Navigator screenOptions={{
-                headerStyle:      { backgroundColor: "#141414" },
-                headerTintColor:  "#ffffff",
-                headerTitleStyle: { fontWeight: "bold" },
-                cardStyle:        { backgroundColor: "#0a0a0a" },
-            }}>
+            <Stack.Navigator
+                screenOptions={{
+                    headerStyle:      { backgroundColor: "#141414" },
+                    headerTintColor:  "#ffffff",
+                    headerTitleStyle: { fontWeight: "bold" },
+                    cardStyle:        { backgroundColor: "#0a0a0a" },
+                }}
+            >
                 <Stack.Screen name="MainTabs"    component={MainTabs}          options={{ headerShown: false }} />
                 <Stack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: "Chi Tiết Phim" }} />
-                <Stack.Screen name="Login"       component={LoginScreen}       options={{ title: "Đăng Nhập" }} />
-                <Stack.Screen name="Register"    component={RegisterScreen}    options={{ title: "Đăng Ký" }} />
+                <Stack.Screen name="Login"       component={LoginScreen}       options={{ title: "Đăng Nhập"   }} />
+                <Stack.Screen name="Register"    component={RegisterScreen}    options={{ title: "Đăng Ký"     }} />
+
+                {/* Sprint 3 */}
+                <Stack.Screen name="History"     component={HistoryScreen}     options={{ title: "Lịch Sử Xem"   }} />
+                <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: "Chỉnh Sửa Hồ Sơ" }} />
+                <Stack.Screen
+                    name="VideoPlayer"
+                    component={VideoPlayerScreen}
+                    options={{ headerShown: false }}  // header nằm trong VideoPlayerScreen
+                />
             </Stack.Navigator>
         </NavigationContainer>
     );

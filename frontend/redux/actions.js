@@ -1,11 +1,11 @@
+const API = "http://192.168.1.158:5555/api/v1";
+
 // ── MOVIES ──────────────────────────────────────
 export const SET_MOVIES          = "SET_MOVIES";
 export const SET_POPULAR_MOVIES  = "SET_POPULAR_MOVIES";
 export const SET_SELECTED_MOVIE  = "SET_SELECTED_MOVIE";
 export const SET_MOVIES_LOADING  = "SET_MOVIES_LOADING";
 export const SET_MOVIES_ERROR    = "SET_MOVIES_ERROR";
-
-const API = "http://192.168.1.158:5555/api/v1";   // ← SỬA IP Ở ĐÂY
 
 export const fetchPopularMovies = () => async (dispatch) => {
     dispatch({ type: SET_MOVIES_LOADING, payload: true });
@@ -62,9 +62,9 @@ export const login = (email, password) => async (dispatch) => {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
-        dispatch({ type: SET_TOKEN, payload: data.token });
-        dispatch({ type: SET_USER,  payload: data.user  });
-        dispatch({ type: SET_AUTH_ERROR, payload: null  });
+        dispatch({ type: SET_TOKEN,      payload: data.token });
+        dispatch({ type: SET_USER,       payload: data.user  });
+        dispatch({ type: SET_AUTH_ERROR, payload: null       });
     } catch (err) {
         dispatch({ type: SET_AUTH_ERROR, payload: err.message });
     } finally {
@@ -94,6 +94,29 @@ export const register = (full_name, email, password) => async (dispatch) => {
 
 export const logout = () => ({ type: LOGOUT });
 
+// Sprint 3: cập nhật hồ sơ
+export const updateProfile = (profileData, token) => async (dispatch) => {
+    dispatch({ type: SET_AUTH_LOADING, payload: true });
+    try {
+        const res  = await fetch(`${API}/auth/profile`, {
+            method:  "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body:    JSON.stringify(profileData),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        // Cập nhật lại user trong store
+        dispatch({ type: SET_USER,       payload: { ...profileData } });
+        dispatch({ type: SET_AUTH_ERROR, payload: null });
+        return { success: true };
+    } catch (err) {
+        dispatch({ type: SET_AUTH_ERROR, payload: err.message });
+        return { success: false, message: err.message };
+    } finally {
+        dispatch({ type: SET_AUTH_LOADING, payload: false });
+    }
+};
+
 // ── FAVORITES ────────────────────────────────────
 export const SET_FAVORITES         = "SET_FAVORITES";
 export const ADD_FAVORITE          = "ADD_FAVORITE";
@@ -108,7 +131,8 @@ export const fetchFavorites = (token) => async (dispatch) => {
         });
         const data = await res.json();
         dispatch({ type: SET_FAVORITES, payload: data });
-    } catch (err) {} finally {
+    } catch (err) {
+    } finally {
         dispatch({ type: SET_FAVORITES_LOADING, payload: false });
     }
 };
@@ -131,5 +155,44 @@ export const removeFavorite = (movieId, token) => async (dispatch) => {
             headers: { Authorization: `Bearer ${token}` },
         });
         dispatch({ type: REMOVE_FAVORITE, payload: movieId });
+    } catch (err) {}
+};
+
+// ── WATCH HISTORY  ← Sprint 3 ────────────────────
+export const SET_HISTORY         = "SET_HISTORY";
+export const REMOVE_HISTORY      = "REMOVE_HISTORY";
+export const SET_HISTORY_LOADING = "SET_HISTORY_LOADING";
+
+export const fetchHistory = (token) => async (dispatch) => {
+    dispatch({ type: SET_HISTORY_LOADING, payload: true });
+    try {
+        const res  = await fetch(`${API}/history`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        dispatch({ type: SET_HISTORY, payload: data });
+    } catch (err) {
+    } finally {
+        dispatch({ type: SET_HISTORY_LOADING, payload: false });
+    }
+};
+
+export const saveProgress = (movieId, progressSeconds, token) => async () => {
+    try {
+        await fetch(`${API}/history`, {
+            method:  "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body:    JSON.stringify({ movie_id: movieId, progress_seconds: progressSeconds }),
+        });
+    } catch (err) {}
+};
+
+export const removeHistory = (movieId, token) => async (dispatch) => {
+    try {
+        await fetch(`${API}/history/${movieId}`, {
+            method:  "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        dispatch({ type: REMOVE_HISTORY, payload: movieId });
     } catch (err) {}
 };

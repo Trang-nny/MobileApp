@@ -1,27 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+    View, Text, FlatList, StyleSheet,
+    TouchableOpacity, ScrollView
+} from "react-native";
+import { SafeAreaView }          from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchPopularMovies, fetchMovies } from "../redux/actions";
 import MovieCard      from "../components/MovieCard";
 import SearchBar      from "../components/SearchBar";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const GENRE_MAP = {
-    "Tất cả": "",
+    "Tất cả":   "",
     "Hành động": 1,
     "Phiêu lưu": 3,
     "Hoạt hình": 4,
-    "Hài hước": 5,
-    "Lãng mạn": 7
+    "Hài hước":  5,
+    "Lãng mạn":  7,
 };
 
 const ASSETS_MAP = {
-    "Avengers: Endgame": require("../assets/Avenger-Endgame.jpg"),
+    "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
     "Spider-Man: No Way Home": require("../assets/Spiderman_No_Way_Home.jpg"),
-    "Titanic": require("../assets/Titanic.jpg"),
-    "Zootopia": require("../assets/Zootopia.jpg"),
-    "Paddington in Peru": require("../assets/Paddington-Peru.jpg"),
+    "Titanic":                 require("../assets/Titanic.jpg"),
+    "Zootopia":                require("../assets/Zootopia.jpg"),
+    "Paddington in Peru":      require("../assets/Paddington-Peru.jpg"),
 };
 
 const MOCK_MOVIES = [
@@ -45,40 +48,64 @@ const HomeScreen = ({ navigation }) => {
 
     useEffect(() => {
         const params = {};
-        if (search) params.search = search;
-        if (activeGenre !== "Tất cả") params.genre_id = GENRE_MAP[activeGenre];
+        if (search)                        params.search   = search;
+        if (activeGenre !== "Tất cả")      params.genre_id = GENRE_MAP[activeGenre];
         const t = setTimeout(() => dispatch(fetchMovies(params)), 400);
         return () => clearTimeout(t);
     }, [search, activeGenre]);
 
-    const baseMovies = apiMovies.length > 0 ? apiMovies : MOCK_MOVIES;
+    const baseMovies    = apiMovies.length > 0 ? apiMovies : MOCK_MOVIES;
     const displayMovies = baseMovies.map(m => ({
         ...m,
-        image: ASSETS_MAP[m.title] || m.image
-    })).filter(m => m.title.toLowerCase().includes(search.toLowerCase()));
+        // Chỉ gán local asset nếu có, KHÔNG ghi đè poster_url của phim API
+        image: ASSETS_MAP[m.title] || m.image || null,
+    }));
 
-    if (moviesLoading && displayMovies.length === 0) return <LoadingSpinner />;
-
-    return (
-        <SafeAreaView style={[styles.container, { paddingTop: 10 }]}>
+    // Header: SearchBar + chip thể loại + tiêu đề section
+    // Đặt vào ListHeaderComponent để nằm trong cùng FlatList,
+    // tránh ScrollView lồng nhau chặn touch
+    const ListHeader = () => (
+        <View>
             <SearchBar value={search} onChangeText={setSearch} />
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                style={styles.genreRow} contentContainerStyle={styles.genreContent}>
+            {/* Chip thể loại */}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.genreRow}
+                contentContainerStyle={styles.genreContent}
+                // quan trọng: cho phép touch đi xuyên qua
+                keyboardShouldPersistTaps="handled"
+            >
                 {GENRES.map(g => (
-                    <TouchableOpacity key={g}
+                    <TouchableOpacity
+                        key={g}
                         style={[styles.chip, activeGenre === g && styles.chipActive]}
-                        onPress={() => setActiveGenre(g)}>
-                        <Text style={[styles.chipText, activeGenre === g && styles.chipTextActive]}>{g}</Text>
+                        onPress={() => setActiveGenre(g)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[styles.chipText, activeGenre === g && styles.chipTextActive]}>
+                            {g}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </ScrollView>
 
-            <Text style={styles.heading}>{activeGenre === "Tất cả" ? "Phim thịnh hành" : activeGenre}</Text>
+            <Text style={styles.heading}>
+                {activeGenre === "Tất cả" ? "Phim thịnh hành" : activeGenre}
+            </Text>
+        </View>
+    );
 
+    if (moviesLoading && displayMovies.length === 0) return <LoadingSpinner />;
+
+    return (
+        <SafeAreaView style={styles.container}>
             <FlatList
                 data={displayMovies}
                 keyExtractor={item => String(item.id)}
+                // ← Toàn bộ header nằm trong FlatList, không có ScrollView bọc ngoài
+                ListHeaderComponent={<ListHeader />}
                 renderItem={({ item }) => (
                     <MovieCard
                         title={item.title}
@@ -92,23 +119,33 @@ const HomeScreen = ({ navigation }) => {
                 )}
                 contentContainerStyle={styles.list}
                 showsVerticalScrollIndicator={false}
-                ListEmptyComponent={<Text style={styles.empty}>Không tìm thấy phim nào</Text>}
+                keyboardShouldPersistTaps="handled"
+                ListEmptyComponent={
+                    <Text style={styles.empty}>Không tìm thấy phim nào</Text>
+                }
             />
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container:       { flex: 1, backgroundColor: "#0a0a0a" },
-    genreRow:        { height: 40, minHeight: 40, maxHeight: 40, flexGrow: 0, marginTop: 12, marginBottom: 16 }, 
-    genreContent:    { paddingHorizontal: 16 }, 
-    chip:            { height: "100%",paddingHorizontal: 20, borderRadius: 20, borderWidth: 1, borderColor: "#2a2a2a", backgroundColor: "#1c1c1c", marginRight: 10,justifyContent: "center", alignItems: "center" },
-    chipActive:      { backgroundColor: "#e50914", borderColor: "#e50914" },
-    chipText:        { color: "#b3b3b3", fontSize: 14, fontWeight: "500" },
-    chipTextActive:  { color: "#fff", fontWeight: "bold" },
-    heading:         { color: "#fff", fontSize: 18, fontWeight: "bold", paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
-    list:            { paddingHorizontal: 16, paddingBottom: 24 },
-    empty:           { color: "#6e6e6e", textAlign: "center", marginTop: 60, fontSize: 15 },
+    container:      { flex: 1, backgroundColor: "#0a0a0a", paddingTop: 10 },
+    genreRow:       { marginTop: 12, marginBottom: 4 },
+    genreContent:   { paddingHorizontal: 16, gap: 10 },
+    chip:           {
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: "#2a2a2a",
+        backgroundColor: "#1c1c1c",
+    },
+    chipActive:     { backgroundColor: "#e50914", borderColor: "#e50914" },
+    chipText:       { color: "#b3b3b3", fontSize: 14, fontWeight: "500" },
+    chipTextActive: { color: "#fff",    fontWeight: "bold" },
+    heading:        { color: "#fff", fontSize: 18, fontWeight: "bold", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
+    list:           { paddingHorizontal: 16, paddingBottom: 24 },
+    empty:          { color: "#6e6e6e", textAlign: "center", marginTop: 60, fontSize: 15 },
 });
 
 export default HomeScreen;

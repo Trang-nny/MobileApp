@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import { SafeAreaView }      from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import { Ionicons } from "@expo/vector-icons";
-import { logout } from "../redux/actions";
+import { Ionicons }          from "@expo/vector-icons";
+import { logout }            from "../redux/actions";
 
 const ProfileScreen = ({ navigation }) => {
     const dispatch = useDispatch();
@@ -44,9 +44,13 @@ const ProfileScreen = ({ navigation }) => {
         <SafeAreaView style={styles.container}>
             {/* Avatar */}
             <View style={styles.avatarWrap}>
-                <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{initials}</Text>
-                </View>
+                {user.avatar ? (
+                    <Image source={{ uri: user.avatar }} style={styles.avatarImg} />
+                ) : (
+                    <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>{initials}</Text>
+                    </View>
+                )}
                 <Text style={styles.name}>{user.full_name}</Text>
                 <Text style={styles.email}>{user.email}</Text>
             </View>
@@ -61,12 +65,12 @@ const ProfileScreen = ({ navigation }) => {
                 <MenuItem
                     icon="time-outline"
                     label="Lịch sử xem"
-                    onPress={() => Alert.alert("Thông báo", "Tính năng sẽ có ở Sprint 3")}
+                    onPress={() => navigation.navigate("History")}   // ← Sprint 3
                 />
                 <MenuItem
                     icon="person-outline"
                     label="Chỉnh sửa hồ sơ"
-                    onPress={() => Alert.alert("Thông báo", "Tính năng sẽ có ở Sprint 3")}
+                    onPress={() => navigation.navigate("EditProfile")} // ← Sprint 3
                 />
             </View>
 
@@ -111,6 +115,13 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 12,
+    },
+    avatarImg: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        marginBottom: 12,
+        backgroundColor: "#1c1c1c",
     },
     avatarText: {
         color: "#fff",
