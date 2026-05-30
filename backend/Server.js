@@ -22,7 +22,6 @@ con.connect(err => {
     if (err) console.log("Lỗi kết nối: " + err.message);
     else {
         console.log("Connected MySQL MovieApp DB!!!");
-        // Tự động thêm UNIQUE constraint cho watch_history nếu chưa có
         con.query(
             `ALTER TABLE watch_history ADD UNIQUE KEY uq_user_movie (user_id, movie_id)`,
             err => {
@@ -35,12 +34,10 @@ con.connect(err => {
     }
 });
 
-// Hàm mã hoá mật khẩu bằng SHA-256
 function hashPassword(password) {
     return crypto.createHash("sha256").update(password).digest("hex");
 }
 
-// ── Middleware xác thực token ──────────────────────────────
 function authMiddleware(req, res, next) {
     var token = req.headers["authorization"]
         ? req.headers["authorization"].split(" ")[1]
@@ -58,7 +55,6 @@ function authMiddleware(req, res, next) {
 // AUTH
 // ══════════════════════════════════════════════════════════
 
-// POST /api/v1/auth/register
 app.post("/api/v1/auth/register", (req, res) => {
     var { full_name, email, password } = req.body;
     if (!full_name || !email || !password)
@@ -81,7 +77,6 @@ app.post("/api/v1/auth/register", (req, res) => {
     });
 });
 
-// POST /api/v1/auth/login
 app.post("/api/v1/auth/login", (req, res) => {
     var { email, password } = req.body;
     if (!email || !password)
@@ -113,7 +108,6 @@ app.post("/api/v1/auth/login", (req, res) => {
     });
 });
 
-// GET /api/v1/auth/profile
 app.get("/api/v1/auth/profile", authMiddleware, (req, res) => {
     var sql = "SELECT id, full_name, email, avatar, created_at FROM users WHERE id = ?";
     con.query(sql, [req.user.id], (err, results) => {
@@ -123,11 +117,9 @@ app.get("/api/v1/auth/profile", authMiddleware, (req, res) => {
     });
 });
 
-// PUT /api/v1/auth/profile  ← Sprint 3: hỗ trợ đổi cả mật khẩu
 app.put("/api/v1/auth/profile", authMiddleware, (req, res) => {
     var { full_name, avatar, current_password, new_password } = req.body;
 
-    // Nếu có đổi mật khẩu → cần xác minh mật khẩu cũ
     if (new_password) {
         if (!current_password)
             return res.status(400).send({ message: "Vui lòng nhập mật khẩu hiện tại" });
@@ -162,7 +154,6 @@ app.put("/api/v1/auth/profile", authMiddleware, (req, res) => {
 // MOVIES
 // ══════════════════════════════════════════════════════════
 
-// GET /api/v1/movies/popular
 app.get("/api/v1/movies/popular", (req, res) => {
     var sql = "SELECT * FROM movies ORDER BY view_count DESC, rating DESC LIMIT 15";
     con.query(sql, (err, movies) => {
@@ -184,7 +175,6 @@ app.get("/api/v1/movies/popular", (req, res) => {
     });
 });
 
-// GET /api/v1/movies?search=&genre_id=&page=&limit=
 app.get("/api/v1/movies", (req, res) => {
     var search   = req.query.search   || "";
     var genre_id = req.query.genre_id || "";
@@ -227,7 +217,6 @@ app.get("/api/v1/movies", (req, res) => {
     });
 });
 
-// GET /api/v1/movies/:id
 app.get("/api/v1/movies/:id", (req, res) => {
     var sql = "SELECT * FROM movies WHERE id = ?";
     con.query(sql, [req.params.id], (err, results) => {
@@ -297,12 +286,16 @@ app.delete("/api/v1/favorites/:movieId", authMiddleware, (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════
-// WATCH HISTORY  ← Sprint 3: fixed + trả về genres
+// WATCH HISTORY
+// FIX: dùng alias m.id AS id để tránh bị cột wh.id ghi đè
 // ══════════════════════════════════════════════════════════
 
-// GET /api/v1/history
 app.get("/api/v1/history", authMiddleware, (req, res) => {
-    var sql = `SELECT wh.progress_seconds, wh.updated_at, m.*
+    // FIX: SELECT m.id AS id rõ ràng + wh.movie_id để client luôn có đúng id
+    var sql = `SELECT m.id AS id, wh.movie_id, m.title, m.description, m.year, m.rating,
+                      m.poster_url, m.trailer_url, m.director, m.cast_list,
+                      m.view_count, m.created_at,
+                      wh.progress_seconds, wh.updated_at AS watched_at
                FROM watch_history wh
                JOIN movies m ON wh.movie_id = m.id
                WHERE wh.user_id = ?
@@ -326,7 +319,6 @@ app.get("/api/v1/history", authMiddleware, (req, res) => {
     });
 });
 
-// PUT /api/v1/history  ← ON DUPLICATE KEY hoạt động nhờ UNIQUE key được thêm lúc start
 app.put("/api/v1/history", authMiddleware, (req, res) => {
     var { movie_id, progress_seconds } = req.body;
     if (!movie_id) return res.status(400).send({ message: "Thiếu movie_id" });
@@ -340,7 +332,6 @@ app.put("/api/v1/history", authMiddleware, (req, res) => {
     });
 });
 
-// DELETE /api/v1/history/:movieId  ← Sprint 3: xoá 1 mục history
 app.delete("/api/v1/history/:movieId", authMiddleware, (req, res) => {
     var sql = "DELETE FROM watch_history WHERE user_id = ? AND movie_id = ?";
     con.query(sql, [req.user.id, req.params.movieId], (err) => {
@@ -350,4 +341,4 @@ app.delete("/api/v1/history/:movieId", authMiddleware, (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────
-app.listen(5555, () => console.log("MovieApp Server running at http://192.168.1.158:5555"));
+app.listen(5555, () => console.log("MovieApp Server running at http://192.168.1.39:5555"));

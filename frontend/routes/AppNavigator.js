@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { NavigationContainer }       from "@react-navigation/native";
 import { createStackNavigator }      from "@react-navigation/stack";
 import { createBottomTabNavigator }  from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons }                  from "@expo/vector-icons";
+import { useSelector }               from "react-redux";
 
 import HomeScreen        from "../screens/HomeScreen";
 import MovieDetailScreen from "../screens/MovieDetailScreen";
@@ -10,9 +11,9 @@ import FavoritesScreen   from "../screens/FavoritesScreen";
 import ProfileScreen     from "../screens/ProfileScreen";
 import LoginScreen       from "../screens/LoginScreen";
 import RegisterScreen    from "../screens/RegisterScreen";
-import HistoryScreen     from "../screens/HistoryScreen";       // Sprint 3
-import EditProfileScreen from "../screens/EditProfileScreen";   // Sprint 3
-import VideoPlayerScreen from "../screens/VideoPlayerScreen";   // Sprint 3
+import HistoryScreen     from "../screens/HistoryScreen";
+import EditProfileScreen from "../screens/EditProfileScreen";
+import VideoPlayerScreen from "../screens/VideoPlayerScreen";
 
 const Tab   = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -42,9 +43,25 @@ function MainTabs() {
     );
 }
 
-export default function AppNavigator() {
+// Component trung gian: lắng nghe token, reset về Login khi đăng xuất
+function RootNavigator() {
+    const token       = useSelector(s => s.token);
+    const navRef      = useRef(null);
+    const prevToken   = useRef(token);
+
+    useEffect(() => {
+        // Chỉ xử lý khi token bị mất (đăng xuất), không xử lý lần đầu
+        if (prevToken.current && !token && navRef.current) {
+            navRef.current.reset({
+                index: 0,
+                routes: [{ name: "MainTabs" }],
+            });
+        }
+        prevToken.current = token;
+    }, [token]);
+
     return (
-        <NavigationContainer>
+        <NavigationContainer ref={navRef}>
             <Stack.Navigator
                 screenOptions={{
                     headerStyle:      { backgroundColor: "#141414" },
@@ -54,19 +71,19 @@ export default function AppNavigator() {
                 }}
             >
                 <Stack.Screen name="MainTabs"    component={MainTabs}          options={{ headerShown: false }} />
-                <Stack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: "Chi Tiết Phim" }} />
-                <Stack.Screen name="Login"       component={LoginScreen}       options={{ title: "Đăng Nhập"   }} />
-                <Stack.Screen name="Register"    component={RegisterScreen}    options={{ title: "Đăng Ký"     }} />
-
-                {/* Sprint 3 */}
-                <Stack.Screen name="History"     component={HistoryScreen}     options={{ title: "Lịch Sử Xem"   }} />
+                <Stack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: "Chi Tiết Phim"    }} />
+                <Stack.Screen name="Login"       component={LoginScreen}       options={{ title: "Đăng Nhập"       }} />
+                <Stack.Screen name="Register"    component={RegisterScreen}    options={{ title: "Đăng Ký"         }} />
+                <Stack.Screen name="History"     component={HistoryScreen}     options={{ title: "Lịch Sử Xem"     }} />
                 <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: "Chỉnh Sửa Hồ Sơ" }} />
                 <Stack.Screen
                     name="VideoPlayer"
                     component={VideoPlayerScreen}
-                    options={{ headerShown: false }}  // header nằm trong VideoPlayerScreen
+                    options={{ headerShown: false }}
                 />
             </Stack.Navigator>
         </NavigationContainer>
     );
 }
+
+export default RootNavigator;

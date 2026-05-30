@@ -18,8 +18,8 @@ const initialState = {
     authError:        null,
     favoriteIds:      [],
     favoritesLoading: false,
-    history:          [],       // Sprint 3
-    historyLoading:   false,    // Sprint 3
+    history:          [],
+    historyLoading:   false,
 };
 
 export default function reducer(state = initialState, action) {
@@ -34,12 +34,14 @@ export default function reducer(state = initialState, action) {
         case SET_AUTH_LOADING:     return { ...state, authLoading:     action.payload };
         case SET_AUTH_ERROR:       return { ...state, authError:       action.payload };
         case LOGOUT:               return { ...state, user: null, token: null, favoriteIds: [], history: [] };
-        case SET_FAVORITES:        return { ...state, favoriteIds:     action.payload.map(m => m.id) };
-        case ADD_FAVORITE:         return { ...state, favoriteIds:     [...state.favoriteIds, action.payload] };
-        case REMOVE_FAVORITE:      return { ...state, favoriteIds:     state.favoriteIds.filter(id => id !== action.payload) };
+        case SET_FAVORITES:        return { ...state, favoriteIds:     action.payload.map(m => Number(m.id)) };
+        case ADD_FAVORITE:         return { ...state, favoriteIds:     [...state.favoriteIds, Number(action.payload)] };
+        // FIX: ép cả 2 vế về Number để so sánh đúng
+        case REMOVE_FAVORITE:      return { ...state, favoriteIds:     state.favoriteIds.filter(id => id !== Number(action.payload)) };
         case SET_FAVORITES_LOADING:return { ...state, favoritesLoading:action.payload };
         case SET_HISTORY:          return { ...state, history:         action.payload };
-        case REMOVE_HISTORY:       return { ...state, history:         state.history.filter(m => m.id !== action.payload) };
+        // FIX: so sánh qua movie_id (nếu có) hoặc id, ép Number để tránh "1" !== 1
+        case REMOVE_HISTORY:       return { ...state, history: state.history.filter(m => Number(m.movie_id ?? m.id) !== Number(action.payload)) };
         case SET_HISTORY_LOADING:  return { ...state, historyLoading:  action.payload };
         default:                   return state;
     }

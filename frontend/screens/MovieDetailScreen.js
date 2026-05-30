@@ -18,11 +18,23 @@ const ASSETS_MAP = {
     "Paddington in Peru":      require("../assets/Paddington-Peru.jpg"),
 };
 
+function normalizeUrl(url) {
+    if (!url) return null;
+    if (typeof url !== "string") return url;
+    url = url.trim();
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    if (url.startsWith("/t/p/")) return `https://image.tmdb.org${url}`;
+    if (url.startsWith("/")) return `https://image.tmdb.org/t/p/w500${url}`;
+    return `https://image.tmdb.org/t/p/w500/${url}`;
+}
+
 function resolveSource(movie) {
     if (!movie) return null;
+    // Ưu tiên asset cục bộ nếu có title match (tránh ảnh TMDB bị chặn)
     if (ASSETS_MAP[movie.title]) return ASSETS_MAP[movie.title];
-    if (movie.poster_url)        return { uri: movie.poster_url };
-    if (movie.image)             return movie.image;
+    // Fallback sang poster_url từ API
+    if (movie.poster_url) return { uri: normalizeUrl(movie.poster_url) };
+    if (movie.image) return movie.image;
     return null;
 }
 

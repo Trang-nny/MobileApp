@@ -10,14 +10,7 @@ import MovieCard      from "../components/MovieCard";
 import SearchBar      from "../components/SearchBar";
 import LoadingSpinner from "../components/LoadingSpinner";
 
-const GENRE_MAP = {
-    "Tất cả":   "",
-    "Hành động": 1,
-    "Phiêu lưu": 3,
-    "Hoạt hình": 4,
-    "Hài hước":  5,
-    "Lãng mạn":  7,
-};
+const API = "http://192.168.1.39:5555/api/v1";
 
 const ASSETS_MAP = {
     "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
@@ -27,6 +20,19 @@ const ASSETS_MAP = {
     "Paddington in Peru":      require("../assets/Paddington-Peru.jpg"),
 };
 
+const TMDB_BASE = "https://image.tmdb.org";
+
+function normalizePoster(url) {
+    if (!url) return null;
+    if (typeof url !== "string") return url;
+    const s = url.trim();
+    if (s.startsWith("http://") || s.startsWith("https://"))
+        return s.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    if (s.startsWith("/t/p/")) return TMDB_BASE + s.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    if (s.startsWith("/")) return `${TMDB_BASE}/t/p/w500${s}`;
+    return `${TMDB_BASE}/t/p/w500/${s}`;
+}
+
 const MOCK_MOVIES = [
     { id: "1", title: "Avengers: Endgame",       genre: "Hành động, Khoa học viễn tưởng", year: 2019, rating: 8.4, image: ASSETS_MAP["Avengers: Endgame"] },
     { id: "2", title: "Spider-Man: No Way Home", genre: "Hành động, Phiêu lưu",           year: 2021, rating: 8.2, image: ASSETS_MAP["Spider-Man: No Way Home"] },
@@ -35,64 +41,86 @@ const MOCK_MOVIES = [
     { id: "5", title: "Paddington in Peru",       genre: "Hài hước, Gia đình",             year: 2024, rating: 7.2, image: ASSETS_MAP["Paddington in Peru"] },
 ];
 
-const GENRES = Object.keys(GENRE_MAP);
-
 const HomeScreen = ({ navigation }) => {
     const dispatch      = useDispatch();
     const apiMovies     = useSelector(s => s.movies);
     const moviesLoading = useSelector(s => s.moviesLoading);
+
     const [search,      setSearch]      = useState("");
-    const [activeGenre, setActiveGenre] = useState("Tất cả");
+    const [activeGenre, setActiveGenre] = useState({ label: "Tất cả", id: "" });
+    // genres = [{ id, name }, ...]
+    const [genres,      setGenres]      = useState([]);
+
+    // Fetch genres động từ API
+    useEffect(() => {
+        fetch(`${API}/genres`)
+            .then(r => r.json())
+            .then(data => {
+                if (Array.isArray(data)) setGenres(data);
+            })
+            .catch(() => {});
+    }, []);
 
     useEffect(() => { dispatch(fetchPopularMovies()); }, []);
 
     useEffect(() => {
         const params = {};
-        if (search)                        params.search   = search;
-        if (activeGenre !== "Tất cả")      params.genre_id = GENRE_MAP[activeGenre];
+        if (search)            params.search   = search;
+        if (activeGenre.id)    params.genre_id = activeGenre.id;
         const t = setTimeout(() => dispatch(fetchMovies(params)), 400);
         return () => clearTimeout(t);
     }, [search, activeGenre]);
 
-    const baseMovies    = apiMovies.length > 0 ? apiMovies : MOCK_MOVIES;
-    const displayMovies = baseMovies.map(m => ({
-        ...m,
-        // Chỉ gán local asset nếu có, KHÔNG ghi đè poster_url của phim API
-        image: ASSETS_MAP[m.title] || m.image || null,
-    }));
+    const baseMovies = apiMovies.length > 0 ? apiMovies : MOCK_MOVIES;
+    const displayMovies = baseMovies.map(m => {
+        const poster = normalizePoster(m.poster_url);
+        return {
+            ...m,
+            poster_url: poster || m.poster_url,
+            image: ASSETS_MAP[m.title] || m.image || null,
+        };
+    });
 
-    // Header: SearchBar + chip thể loại + tiêu đề section
-    // Đặt vào ListHeaderComponent để nằm trong cùng FlatList,
-    // tránh ScrollView lồng nhau chặn touch
     const ListHeader = () => (
         <View>
             <SearchBar value={search} onChangeText={setSearch} />
 
-            {/* Chip thể loại */}
+            {/* Chip thể loại — fetch động */}
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.genreRow}
                 contentContainerStyle={styles.genreContent}
-                // quan trọng: cho phép touch đi xuyên qua
                 keyboardShouldPersistTaps="handled"
             >
-                {GENRES.map(g => (
+                {/* Chip "Tất cả" */}
+                <TouchableOpacity
+                    key="all"
+                    style={[styles.chip, activeGenre.id === "" && styles.chipActive]}
+                    onPress={() => setActiveGenre({ label: "Tất cả", id: "" })}
+                    activeOpacity={0.7}
+                >
+                    <Text style={[styles.chipText, activeGenre.id === "" && styles.chipTextActive]}>
+                        Tất cả
+                    </Text>
+                </TouchableOpacity>
+
+                {genres.map(g => (
                     <TouchableOpacity
-                        key={g}
-                        style={[styles.chip, activeGenre === g && styles.chipActive]}
-                        onPress={() => setActiveGenre(g)}
+                        key={g.id}
+                        style={[styles.chip, activeGenre.id === g.id && styles.chipActive]}
+                        onPress={() => setActiveGenre({ label: g.name, id: g.id })}
                         activeOpacity={0.7}
                     >
-                        <Text style={[styles.chipText, activeGenre === g && styles.chipTextActive]}>
-                            {g}
+                        <Text style={[styles.chipText, activeGenre.id === g.id && styles.chipTextActive]}>
+                            {g.name}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </ScrollView>
 
             <Text style={styles.heading}>
-                {activeGenre === "Tất cả" ? "Phim thịnh hành" : activeGenre}
+                {activeGenre.id === "" ? "Phim thịnh hành" : activeGenre.label}
             </Text>
         </View>
     );
@@ -104,7 +132,6 @@ const HomeScreen = ({ navigation }) => {
             <FlatList
                 data={displayMovies}
                 keyExtractor={item => String(item.id)}
-                // ← Toàn bộ header nằm trong FlatList, không có ScrollView bọc ngoài
                 ListHeaderComponent={<ListHeader />}
                 renderItem={({ item }) => (
                     <MovieCard

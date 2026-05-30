@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-// Map ảnh local theo tên phim
 const ASSETS_MAP = {
     "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
     "Spider-Man: No Way Home": require("../assets/Spiderman_No_Way_Home.jpg"),
@@ -11,29 +10,60 @@ const ASSETS_MAP = {
     "Paddington in Peru":      require("../assets/Paddington-Peru.jpg"),
 };
 
-// Trả về source hợp lệ: local asset → poster_url → image prop
+const TMDB_BASE = "https://image.tmdb.org";
+
+// Xử lý mọi dạng poster_url từ DB:
+// 1. Full URL:    "https://image.tmdb.org/t/p/w1280/abc.jpg"  → chuẩn hoá về w500
+// 2. Path:        "/t/p/w500/abc.jpg"                         → thêm domain TMDB
+// 3. Path ngắn:  "/abc.jpg"                                   → thêm domain + path đầy đủ
+// 4. URL khác:    "https://example.com/img.jpg"               → dùng nguyên
+function normalizePosterUrl(url) {
+    if (!url) return null;
+    url = url.trim();
+
+    // Đã là full URL
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+        // Chuẩn hoá size TMDB về w500
+        return url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    }
+
+    // Path dạng /t/p/.../file.jpg
+    if (url.startsWith("/t/p/")) {
+        return TMDB_BASE + url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    }
+
+    // Path ngắn dạng /abc.jpg — gắn domain + path mặc định
+    if (url.startsWith("/")) {
+        return `${TMDB_BASE}/t/p/w500${url}`;
+    }
+
+    // Tên file thuần: "abc.jpg"
+    return `${TMDB_BASE}/t/p/w500/${url}`;
+}
+
 function resolveSource(title, poster_url, image) {
-    if (ASSETS_MAP[title])  return ASSETS_MAP[title];
-    if (poster_url)         return { uri: poster_url };
-    if (image)              return image;
+    if (ASSETS_MAP[title]) return ASSETS_MAP[title];
+    const normalized = normalizePosterUrl(poster_url);
+    if (normalized)    return { uri: normalized };
+    if (image)         return image;
     return null;
 }
 
 const MovieCard = ({ title, genre, year, rating, image, poster_url, isFavorite, onPress, onToggleFavorite }) => {
-    const source = resolveSource(title, poster_url, image);
-    // Chỉ hiện nút tim khi đây là context yêu thích (isFavorite được truyền rõ ràng, kể cả false)
+    const source    = resolveSource(title, poster_url, image);
     const showHeart = typeof isFavorite !== "undefined" && onToggleFavorite;
+    const [imgError, setImgError] = useState(false);
 
     return (
         <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-            {source ? (
+            {source && !imgError ? (
                 <Image
                     source={source}
                     style={styles.image}
                     resizeMode="cover"
+                    onError={() => setImgError(true)}
                 />
             ) : (
-                // Fallback khi không có ảnh nào
                 <View style={[styles.image, styles.noImage]}>
                     <Ionicons name="film-outline" size={28} color="#333" />
                 </View>

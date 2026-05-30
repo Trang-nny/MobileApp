@@ -1,4 +1,4 @@
-const API = "http://192.168.1.158:5555/api/v1";
+const API = "http://192.168.1.39:5555/api/v1";
 
 // ── MOVIES ──────────────────────────────────────
 export const SET_MOVIES          = "SET_MOVIES";
@@ -94,7 +94,6 @@ export const register = (full_name, email, password) => async (dispatch) => {
 
 export const logout = () => ({ type: LOGOUT });
 
-// Sprint 3: cập nhật hồ sơ
 export const updateProfile = (profileData, token) => async (dispatch) => {
     dispatch({ type: SET_AUTH_LOADING, payload: true });
     try {
@@ -105,7 +104,6 @@ export const updateProfile = (profileData, token) => async (dispatch) => {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
-        // Cập nhật lại user trong store
         dispatch({ type: SET_USER,       payload: { ...profileData } });
         dispatch({ type: SET_AUTH_ERROR, payload: null });
         return { success: true };
@@ -150,15 +148,15 @@ export const addFavorite = (movieId, token) => async (dispatch) => {
 
 export const removeFavorite = (movieId, token) => async (dispatch) => {
     try {
-        await fetch(`${API}/favorites/${movieId}`, {
+        const res = await fetch(`${API}/favorites/${movieId}`, {
             method:  "DELETE",
             headers: { Authorization: `Bearer ${token}` },
         });
-        dispatch({ type: REMOVE_FAVORITE, payload: movieId });
+        if (res.ok) dispatch({ type: REMOVE_FAVORITE, payload: movieId });
     } catch (err) {}
 };
 
-// ── WATCH HISTORY  ← Sprint 3 ────────────────────
+// ── WATCH HISTORY ────────────────────────────────
 export const SET_HISTORY         = "SET_HISTORY";
 export const REMOVE_HISTORY      = "REMOVE_HISTORY";
 export const SET_HISTORY_LOADING = "SET_HISTORY_LOADING";
@@ -187,12 +185,23 @@ export const saveProgress = (movieId, progressSeconds, token) => async () => {
     } catch (err) {}
 };
 
+// FIX: kiểm tra res.ok trước khi dispatch, log lỗi rõ ràng
 export const removeHistory = (movieId, token) => async (dispatch) => {
     try {
-        await fetch(`${API}/history/${movieId}`, {
+        console.log("[removeHistory] Deleting movieId:", movieId, "type:", typeof movieId);
+        const res = await fetch(`${API}/history/${movieId}`, {
             method:  "DELETE",
             headers: { Authorization: `Bearer ${token}` },
         });
-        dispatch({ type: REMOVE_HISTORY, payload: movieId });
-    } catch (err) {}
+        console.log("[removeHistory] Response status:", res.status);
+        if (res.ok) {
+            dispatch({ type: REMOVE_HISTORY, payload: movieId });
+            console.log("[removeHistory] Dispatched REMOVE_HISTORY for:", movieId);
+        } else {
+            const body = await res.json().catch(() => ({}));
+            console.warn("[removeHistory] Server error:", res.status, body);
+        }
+    } catch (err) {
+        console.error("[removeHistory] Network error:", err.message);
+    }
 };
