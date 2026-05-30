@@ -20,17 +20,15 @@ const FavoritesScreen = ({ navigation }) => {
         if (token) dispatch(fetchFavorites(token));
     }, [token]);
 
-    // Chưa đăng nhập
     if (!token) {
         return (
             <SafeAreaView style={styles.center}>
-                <Ionicons name="heart-dislike-outline" size={60} color="#2a2a2a" />
+                <View style={styles.emptyIcon}>
+                    <Ionicons name="heart-outline" size={40} color="#e50914" />
+                </View>
                 <Text style={styles.emptyTitle}>Chưa đăng nhập</Text>
-                <Text style={styles.emptyText}>Đăng nhập để lưu phim yêu thích</Text>
-                <TouchableOpacity
-                    style={styles.loginBtn}
-                    onPress={() => navigation.navigate("Login")}
-                >
+                <Text style={styles.emptyText}>Đăng nhập để lưu những bộ phim yêu thích</Text>
+                <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate("Login")}>
                     <Text style={styles.loginBtnText}>Đăng nhập ngay</Text>
                 </TouchableOpacity>
             </SafeAreaView>
@@ -39,29 +37,39 @@ const FavoritesScreen = ({ navigation }) => {
 
     if (favoritesLoading) return <LoadingSpinner />;
 
-    // Danh sách trống
     if (favoriteIds.length === 0) {
         return (
             <SafeAreaView style={styles.center}>
-                <Ionicons name="heart-outline" size={60} color="#2a2a2a" />
+                <View style={styles.emptyIcon}>
+                    <Ionicons name="heart-outline" size={40} color="#e50914" />
+                </View>
                 <Text style={styles.emptyTitle}>Danh sách trống</Text>
-                <Text style={styles.emptyText}>Nhấn ♥ trên bất kỳ phim nào để lưu</Text>
+                <Text style={styles.emptyText}>
+                    Nhấn biểu tượng ♥ trên bất kỳ phim nào để lưu vào đây
+                </Text>
             </SafeAreaView>
         );
     }
 
     return (
         <SafeAreaView style={styles.container}>
-            <Text style={styles.heading}>Phim yêu thích ({favoriteIds.length})</Text>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Yêu thích</Text>
+                <View style={styles.headerBadge}>
+                    <Text style={styles.headerBadgeText}>{favoriteIds.length}</Text>
+                </View>
+            </View>
             <FlatList
                 data={favoriteIds}
                 keyExtractor={id => String(id)}
                 contentContainerStyle={styles.list}
+                showsVerticalScrollIndicator={false}
                 renderItem={({ item: id }) => {
                     const movie = favoriteMovies.find(m => Number(m.id) === id);
                     if (!movie) return null;
                     return (
                         <MovieCard
+                            variant="row"
                             title={movie.title}
                             genre={movie.genres ? movie.genres.join(", ") : movie.genre}
                             year={movie.year}
@@ -74,59 +82,24 @@ const FavoritesScreen = ({ navigation }) => {
                         />
                     );
                 }}
-                showsVerticalScrollIndicator={false}
             />
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#0a0a0a",
-    },
-    center: {
-        flex: 1,
-        backgroundColor: "#0a0a0a",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 32,
-    },
-    heading: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "bold",
-        padding: 16,
-        paddingBottom: 8,
-    },
-    list: {
-        paddingHorizontal: 16,
-        paddingBottom: 24,
-    },
-    emptyTitle: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "bold",
-        marginTop: 16,
-    },
-    emptyText: {
-        color: "#6e6e6e",
-        fontSize: 14,
-        textAlign: "center",
-        marginTop: 8,
-    },
-    loginBtn: {
-        marginTop: 20,
-        backgroundColor: "#e50914",
-        borderRadius: 8,
-        paddingHorizontal: 28,
-        paddingVertical: 12,
-    },
-    loginBtnText: {
-        color: "#fff",
-        fontWeight: "bold",
-        fontSize: 15,
-    },
+    container:        { flex: 1, backgroundColor: "#0a0a0a" },
+    center:           { flex: 1, backgroundColor: "#0a0a0a", justifyContent: "center", alignItems: "center", padding: 32 },
+    header:           { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingTop: 8, paddingBottom: 16, gap: 10 },
+    headerTitle:      { color: "#fff", fontSize: 24, fontWeight: "900", letterSpacing: -0.3 },
+    headerBadge:      { backgroundColor: "#e50914", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 },
+    headerBadgeText:  { color: "#fff", fontSize: 13, fontWeight: "bold" },
+    list:             { paddingHorizontal: 16, paddingBottom: 32 },
+    emptyIcon:        { width: 80, height: 80, borderRadius: 40, backgroundColor: "#1c1c1c", justifyContent: "center", alignItems: "center", marginBottom: 20 },
+    emptyTitle:       { color: "#fff", fontSize: 20, fontWeight: "bold", marginBottom: 8 },
+    emptyText:        { color: "#6e6e6e", fontSize: 14, textAlign: "center", lineHeight: 20 },
+    loginBtn:         { marginTop: 24, backgroundColor: "#e50914", borderRadius: 8, paddingHorizontal: 32, paddingVertical: 14 },
+    loginBtnText:     { color: "#fff", fontWeight: "bold", fontSize: 15 },
 });
 
 export default FavoritesScreen;

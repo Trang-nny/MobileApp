@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
 import {
     View, Text, Image, ScrollView,
-    TouchableOpacity, StyleSheet, Linking, Dimensions
+    TouchableOpacity, StyleSheet, Linking, Dimensions,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { Ionicons } from "@expo/vector-icons";
-import Tag from "../components/Tag";
+import { Ionicons }            from "@expo/vector-icons";
+import Tag                     from "../components/Tag";
 import { addFavorite, removeFavorite, fetchMovieById } from "../redux/actions";
 
 const { width } = Dimensions.get("window");
@@ -20,34 +20,26 @@ const ASSETS_MAP = {
 
 function normalizeUrl(url) {
     if (!url) return null;
-    if (typeof url !== "string") return url;
     url = url.trim();
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
     if (url.startsWith("/t/p/")) return `https://image.tmdb.org${url}`;
-    if (url.startsWith("/")) return `https://image.tmdb.org/t/p/w500${url}`;
+    if (url.startsWith("/"))     return `https://image.tmdb.org/t/p/w500${url}`;
     return `https://image.tmdb.org/t/p/w500/${url}`;
 }
 
 function resolveSource(movie) {
     if (!movie) return null;
-    // Ưu tiên asset cục bộ nếu có title match (tránh ảnh TMDB bị chặn)
     if (ASSETS_MAP[movie.title]) return ASSETS_MAP[movie.title];
-    // Fallback sang poster_url từ API
     if (movie.poster_url) return { uri: normalizeUrl(movie.poster_url) };
-    if (movie.image) return movie.image;
+    if (movie.image)      return movie.image;
     return null;
 }
 
 function toWatchableUrl(url) {
     if (!url) return null;
-    const embedMatch = url.match(/youtube\.com\/embed\/([^?&]+)/);
-    if (embedMatch) return `https://youtu.be/${embedMatch[1]}`;
+    const m = url.match(/youtube\.com\/embed\/([^?&]+)/);
+    if (m) return `https://youtu.be/${m[1]}`;
     return url;
-}
-
-function fallbackTrailerUrl(title, year) {
-    const q = encodeURIComponent(`${title} ${year || ""} official trailer`);
-    return `https://www.youtube.com/results?search_query=${q}`;
 }
 
 const MovieDetailScreen = ({ route, navigation }) => {
@@ -61,11 +53,12 @@ const MovieDetailScreen = ({ route, navigation }) => {
         if (passed.id && !isNaN(passed.id)) dispatch(fetchMovieById(passed.id));
     }, [passed.id]);
 
-    const movie  = (selected && String(selected.id) === String(passed.id)) ? selected : passed;
-    const isFav  = favoriteIds.includes(Number(movie.id));
-    const genres = movie.genres || (movie.genre ? movie.genre.split(", ") : []);
-
-    const trailerUrl = toWatchableUrl(movie.trailer_url) || fallbackTrailerUrl(movie.title, movie.year);
+    const movie     = (selected && String(selected.id) === String(passed.id)) ? selected : passed;
+    const isFav     = favoriteIds.includes(Number(movie.id));
+    const genres    = movie.genres || (movie.genre ? movie.genre.split(", ") : []);
+    const imgSource = resolveSource(movie);
+    const trailerUrl = toWatchableUrl(movie.trailer_url)
+        || `https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + " trailer")}`;
 
     const toggleFav = () => {
         if (!token) { navigation.navigate("Login"); return; }
@@ -78,141 +71,112 @@ const MovieDetailScreen = ({ route, navigation }) => {
         navigation.navigate("VideoPlayer", { movie });
     };
 
-    const imgSource = resolveSource(movie);
-
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            {/* Header section với hiệu ứng Backdrop */}
-            <View style={styles.headerContainer}>
-                {/* Ảnh nền mờ bao phủ để lấp khoảng trống */}
-                <Image source={imgSource} style={styles.backdrop} blurRadius={10} />
-                <View style={styles.darkOverlay} />
-                
-                {/* Ảnh chính hiển thị trọn vẹn */}
-                <Image source={imgSource} style={styles.mainPoster} resizeMode="contain" />
 
-                {/* Nút Heart được thiết kế lại */}
-                <TouchableOpacity style={styles.heartButton} onPress={toggleFav}>
+            {/* ── Header: backdrop + poster ── */}
+            <View style={styles.headerWrap}>
+                {imgSource && (
+                    <Image source={imgSource} style={styles.backdrop} blurRadius={10} />
+                )}
+                <View style={styles.darkOverlay} />
+                {imgSource && (
+                    <Image source={imgSource} style={styles.poster} resizeMode="cover" />
+                )}
+                <TouchableOpacity style={styles.favBtn} onPress={toggleFav}>
                     <Ionicons
                         name={isFav ? "heart" : "heart-outline"}
-                        size={28}
+                        size={26}
                         color={isFav ? "#e50914" : "#fff"}
                     />
                 </TouchableOpacity>
             </View>
 
+            {/* ── Nội dung ── */}
             <View style={styles.content}>
                 <Text style={styles.title}>{movie.title}</Text>
+
+                {/* Meta badges */}
                 <View style={styles.metaRow}>
-                    <Text style={styles.metaText}>{movie.year}</Text>
-                    <View style={styles.dot} />
-                    <Text style={styles.metaText}>⭐ {movie.rating || "N/A"}</Text>
-                    <View style={styles.dot} />
-                    <Text style={styles.metaText}>🎬 {movie.director || "Updating"}</Text>
+                    <View style={styles.metaBadge}>
+                        <Text style={styles.metaBadgeText}>{movie.year}</Text>
+                    </View>
+                    {movie.rating ? (
+                        <View style={[styles.metaBadge, styles.ratingBadge]}>
+                            <Ionicons name="star" size={12} color="#f5a623" />
+                            <Text style={[styles.metaBadgeText, { color: "#f5a623" }]}> {movie.rating}</Text>
+                        </View>
+                    ) : null}
+                    <View style={[styles.metaBadge, styles.hdBadge]}>
+                        <Text style={[styles.metaBadgeText, { color: "#46d369" }]}>HD</Text>
+                    </View>
                 </View>
 
+                {/* Tags thể loại — màu đỏ nổi bật như bản gốc */}
                 <View style={styles.tags}>
-                    {genres.map((g, i) => <Tag key={i} label={g} color="#333" />)}
-                    <Tag label="HD" color="#46d369" />
+                    {genres.map((g, i) => <Tag key={i} label={g} color="#e50914" />)}
                 </View>
 
-                <Text style={styles.label}>Nội dung</Text>
-                <Text style={styles.desc}>{movie.description || "Nội dung sẽ được cập nhật từ API."}</Text>
+                {/* Đạo diễn */}
+                {movie.director ? (
+                    <Text style={styles.director}>🎬 {movie.director}</Text>
+                ) : null}
 
-                {movie.cast_list && (
-                    <>
-                        <Text style={styles.label}>Diễn viên</Text>
-                        <Text style={styles.desc}>{movie.cast_list}</Text>
-                    </>
-                )}
-
-                <View style={styles.buttonGroup}>
+                {/* Buttons — xem phim đỏ, trailer xám đậm */}
+                <View style={styles.btnGroup}>
                     <TouchableOpacity style={styles.watchBtn} onPress={handleWatch}>
-                        <Ionicons name="play" size={22} color="#fff" style={{ marginRight: 8 }} />
+                        <Ionicons name="play" size={20} color="#fff" style={{ marginRight: 8 }} />
                         <Text style={styles.watchText}>Xem Phim</Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity style={styles.trailerBtn} onPress={() => Linking.openURL(trailerUrl)}>
-                        <Ionicons name="logo-youtube" size={22} color="#fff" style={{ marginRight: 8 }} />
+                        <Ionicons name="logo-youtube" size={20} color="#fff" style={{ marginRight: 6 }} />
                         <Text style={styles.trailerText}>Trailer</Text>
                     </TouchableOpacity>
                 </View>
+
+                {/* Nội dung phim */}
+                <Text style={styles.sectionLabel}>Nội dung</Text>
+                <Text style={styles.desc}>{movie.description || "Đang cập nhật nội dung..."}</Text>
+
+                {movie.cast_list ? (
+                    <>
+                        <Text style={styles.sectionLabel}>Diễn viên</Text>
+                        <Text style={styles.desc}>{movie.cast_list}</Text>
+                    </>
+                ) : null}
+
+                <View style={{ height: 40 }} />
             </View>
         </ScrollView>
     );
 };
 
+const POSTER_W = width * 0.55;
+const POSTER_H = POSTER_W * 1.45;
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#0a0a0a" },
-    headerContainer: {
-        width: "100%",
-        height: 420,
-        justifyContent: "center",
-        alignItems: "center",
-        position: "relative",
-        backgroundColor: "#000"
-    },
-    backdrop: {
-        ...StyleSheet.absoluteFillObject,
-        width: "100%",
-        height: "100%",
-        opacity: 0.5,
-    },
-    darkOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(0,0,0,0.4)",
-    },
-    mainPoster: {
-        width: width * 0.65,
-        height: "85%",
-        borderRadius: 12,
-        // Đổ bóng cho poster nổi bật
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.8,
-        shadowRadius: 15,
-    },
-    heartButton: {
-        position: "absolute",
-        bottom: 15,
-        right: 20,
-        backgroundColor: "rgba(255,255,255,0.15)",
-        padding: 10,
-        borderRadius: 30,
-        backdropFilter: "blur(10px)" // Chỉ tác dụng trên một số môi trường, dùng tạm mờ nền
-    },
-    content: { padding: 20 },
-    title: { fontSize: 28, fontWeight: "bold", color: "#fff", marginBottom: 10 },
-    metaRow: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-    metaText: { color: "#b3b3b3", fontSize: 14 },
-    dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: "#555", marginHorizontal: 10 },
-    tags: { flexDirection: "row", flexWrap: "wrap", marginBottom: 25, gap: 8 },
-    label: { fontSize: 18, fontWeight: "bold", color: "#fff", marginBottom: 8 },
-    desc: { fontSize: 15, lineHeight: 24, color: "#bbb", marginBottom: 20 },
-    
-    buttonGroup: { flexDirection: "row", gap: 12, marginTop: 10 },
-    watchBtn: { 
-        flex: 2, 
-        flexDirection: "row", 
-        alignItems: "center", 
-        justifyContent: "center", 
-        backgroundColor: "#e50914", 
-        borderRadius: 8, 
-        height: 55 
-    },
-    watchText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-    trailerBtn: { 
-        flex: 1, 
-        flexDirection: "row", 
-        alignItems: "center", 
-        justifyContent: "center", 
-        backgroundColor: "#2a2a2a", 
-        borderRadius: 8, 
-        height: 55,
-        borderWidth: 1,
-        borderColor: "#444"
-    },
-    trailerText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+    container:   { flex: 1, backgroundColor: "#0a0a0a" },
+    headerWrap:  { width, height: 380, justifyContent: "center", alignItems: "center", overflow: "hidden", backgroundColor: "#000" },
+    backdrop:    { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", opacity: 0.55 },
+    darkOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
+    poster:      { width: POSTER_W, height: POSTER_H, borderRadius: 12, borderWidth: 2, borderColor: "rgba(255,255,255,0.12)" },
+    favBtn:      { position: "absolute", bottom: 14, right: 16, backgroundColor: "rgba(0,0,0,0.65)", borderRadius: 24, padding: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" },
+    content:     { padding: 18 },
+    title:       { color: "#fff", fontSize: 26, fontWeight: "900", letterSpacing: -0.5, marginBottom: 12 },
+    metaRow:     { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
+    metaBadge:   { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#444", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
+    metaBadgeText: { color: "#b3b3b3", fontSize: 12, fontWeight: "600" },
+    ratingBadge: { borderColor: "#f5a623" + "66" },
+    hdBadge:     { borderColor: "#46d36966" },
+    tags:        { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
+    director:    { color: "#b3b3b3", fontSize: 13, marginBottom: 20 },
+    btnGroup:    { flexDirection: "row", gap: 12, marginBottom: 28 },
+    watchBtn:    { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#e50914", borderRadius: 8, height: 54 },
+    watchText:   { color: "#fff", fontSize: 16, fontWeight: "900" },
+    trailerBtn:  { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#2a2a2a", borderRadius: 8, height: 54, borderWidth: 1, borderColor: "#444" },
+    trailerText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+    sectionLabel:{ color: "#fff", fontSize: 17, fontWeight: "800", marginBottom: 8 },
+    desc:        { color: "#bbb", fontSize: 14, lineHeight: 22, marginBottom: 20 },
 });
 
 export default MovieDetailScreen;

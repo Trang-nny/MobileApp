@@ -1,30 +1,34 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
-import { SafeAreaView }      from "react-native-safe-area-context";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Image } from "react-native";
+import { SafeAreaView }   from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
-import { Ionicons }          from "@expo/vector-icons";
-import { logout }            from "../redux/actions";
+import { Ionicons }       from "@expo/vector-icons";
+import { logout }         from "../redux/actions";
 
 const ProfileScreen = ({ navigation }) => {
     const dispatch = useDispatch();
     const user     = useSelector(s => s.user);
 
-    // Chưa đăng nhập
     if (!user) {
         return (
             <SafeAreaView style={styles.center}>
-                <Ionicons name="person-circle-outline" size={80} color="#2a2a2a" />
-                <Text style={styles.emptyTitle}>Chưa đăng nhập</Text>
-                <TouchableOpacity
-                    style={styles.loginBtn}
-                    onPress={() => navigation.navigate("Login")}
-                >
+                <View style={styles.anonIcon}>
+                    <Ionicons name="person-outline" size={40} color="#e50914" />
+                </View>
+                <Text style={styles.anonTitle}>Chưa đăng nhập</Text>
+                <Text style={styles.anonSub}>Đăng nhập để trải nghiệm đầy đủ tính năng</Text>
+                <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate("Login")}>
                     <Text style={styles.loginBtnText}>Đăng nhập</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.registerBtn} onPress={() => navigation.navigate("Register")}>
+                    <Text style={styles.registerBtnText}>Tạo tài khoản mới</Text>
                 </TouchableOpacity>
             </SafeAreaView>
         );
     }
 
+    // Lấy 2 chữ cái đầu của tên (fallback khi không có avatar)
     const initials = user.full_name
         ? user.full_name.split(" ").map(w => w[0]).slice(-2).join("").toUpperCase()
         : "?";
@@ -32,164 +36,153 @@ const ProfileScreen = ({ navigation }) => {
     const handleLogout = () => {
         Alert.alert("Đăng xuất", "Bạn có chắc muốn đăng xuất?", [
             { text: "Huỷ", style: "cancel" },
-            {
-                text: "Đăng xuất",
-                style: "destructive",
-                onPress: () => dispatch(logout()),
-            },
+            { text: "Đăng xuất", style: "destructive", onPress: () => dispatch(logout()) },
         ]);
     };
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Avatar */}
-            <View style={styles.avatarWrap}>
-                {user.avatar ? (
-                    <Image source={{ uri: user.avatar }} style={styles.avatarImg} />
-                ) : (
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{initials}</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+
+                {/* ── Cover + Avatar ── */}
+                <View style={styles.coverWrap}>
+                    <LinearGradient
+                        colors={["#e50914", "#7a0000"]}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFillObject}
+                    />
+                    <View style={styles.avatarRing}>
+                        {/* Hiển thị ảnh avatar từ DB nếu có, ngược lại dùng chữ cái đầu */}
+                        {user.avatar ? (
+                            <Image source={{ uri: user.avatar }} style={styles.avatarImg} />
+                        ) : (
+                            <View style={styles.avatarFallback}>
+                                <Text style={styles.avatarText}>{initials}</Text>
+                            </View>
+                        )}
                     </View>
-                )}
-                <Text style={styles.name}>{user.full_name}</Text>
-                <Text style={styles.email}>{user.email}</Text>
-            </View>
+                </View>
 
-            {/* Menu */}
-            <View style={styles.menu}>
-                <MenuItem
-                    icon="heart-outline"
-                    label="Phim yêu thích"
-                    onPress={() => navigation.navigate("Favorites")}
-                />
-                <MenuItem
-                    icon="time-outline"
-                    label="Lịch sử xem"
-                    onPress={() => navigation.navigate("History")}   // ← Sprint 3
-                />
-                <MenuItem
-                    icon="person-outline"
-                    label="Chỉnh sửa hồ sơ"
-                    onPress={() => navigation.navigate("EditProfile")} // ← Sprint 3
-                />
-            </View>
+                {/* ── Tên + Email ── */}
+                <View style={styles.userInfo}>
+                    <Text style={styles.name}>{user.full_name}</Text>
+                    <Text style={styles.email}>{user.email}</Text>
+                </View>
 
-            {/* Đăng xuất */}
-            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                <Ionicons name="log-out-outline" size={20} color="#e50914" style={{ marginRight: 8 }} />
-                <Text style={styles.logoutText}>Đăng xuất</Text>
-            </TouchableOpacity>
+                {/* ── Stats row — nhấn được điều hướng ── */}
+                <View style={styles.statsRow}>
+                    <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate("Favorites")}>
+                        <Ionicons name="heart" size={20} color="#e50914" />
+                        <Text style={styles.statLabel}>Yêu thích</Text>
+                    </TouchableOpacity>
+                    <View style={styles.statDivider} />
+                    <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate("History")}>
+                        <Ionicons name="time" size={20} color="#e50914" />
+                        <Text style={styles.statLabel}>Lịch sử</Text>
+                    </TouchableOpacity>
+                    <View style={styles.statDivider} />
+                    <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate("EditProfile")}>
+                        <Ionicons name="person" size={20} color="#e50914" />
+                        <Text style={styles.statLabel}>Hồ sơ</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* ── Menu ── */}
+                <View style={styles.menuSection}>
+                    <Text style={styles.menuSectionTitle}>Tài khoản</Text>
+                    <MenuItem
+                        icon="heart"
+                        label="Phim yêu thích"
+                        desc="Danh sách phim đã lưu"
+                        onPress={() => navigation.navigate("Favorites")}
+                    />
+                    <MenuItem
+                        icon="time"
+                        label="Lịch sử xem"
+                        desc="Phim đã xem gần đây"
+                        onPress={() => navigation.navigate("History")}
+                    />
+                    <MenuItem
+                        icon="create-outline"
+                        label="Chỉnh sửa hồ sơ"
+                        desc="Cập nhật thông tin cá nhân"
+                        onPress={() => navigation.navigate("EditProfile")}
+                    />
+                </View>
+
+                {/* ── Đăng xuất ── */}
+                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                    <Ionicons name="log-out-outline" size={20} color="#e50914" />
+                    <Text style={styles.logoutText}>Đăng xuất</Text>
+                </TouchableOpacity>
+
+                <View style={{ height: 32 }} />
+            </ScrollView>
         </SafeAreaView>
     );
 };
 
-const MenuItem = ({ icon, label, onPress }) => (
+const MenuItem = ({ icon, label, desc, onPress }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-        <Ionicons name={icon} size={20} color="#b3b3b3" />
-        <Text style={styles.menuLabel}>{label}</Text>
-        <Ionicons name="chevron-forward-outline" size={16} color="#555" />
+        <View style={styles.menuIconWrap}>
+            <Ionicons name={icon} size={20} color="#e50914" />
+        </View>
+        <View style={styles.menuTextWrap}>
+            <Text style={styles.menuLabel}>{label}</Text>
+            {desc ? <Text style={styles.menuDesc}>{desc}</Text> : null}
+        </View>
+        <Ionicons name="chevron-forward" size={16} color="#444" />
     </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#0a0a0a",
-    },
-    center: {
-        flex: 1,
-        backgroundColor: "#0a0a0a",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    avatarWrap: {
-        alignItems: "center",
-        paddingTop: 24,
-        paddingBottom: 32,
-    },
-    avatar: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: "#e50914",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: 12,
-    },
-    avatarImg: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        marginBottom: 12,
+    container:       { flex: 1, backgroundColor: "#0a0a0a" },
+    center:          { flex: 1, backgroundColor: "#0a0a0a", justifyContent: "center", alignItems: "center", padding: 32 },
+
+    coverWrap:       { height: 140, justifyContent: "flex-end", paddingBottom: 0, position: "relative" },
+    avatarRing:      {
+        position: "absolute", bottom: -40, left: 20,
+        width: 80, height: 80, borderRadius: 40,
+        borderWidth: 3, borderColor: "#0a0a0a",
         backgroundColor: "#1c1c1c",
+        overflow: "hidden",
+        justifyContent: "center", alignItems: "center",
     },
-    avatarText: {
-        color: "#fff",
-        fontSize: 28,
-        fontWeight: "bold",
+    avatarImg:       { width: "100%", height: "100%", borderRadius: 40 },
+    avatarFallback:  { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", backgroundColor: "#1c1c1c" },
+    avatarText:      { color: "#e50914", fontSize: 26, fontWeight: "900" },
+
+    userInfo:        { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 20 },
+    name:            { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.3 },
+    email:           { color: "#777", fontSize: 13, marginTop: 4 },
+
+    statsRow:        {
+        flexDirection: "row", marginHorizontal: 16, marginBottom: 28,
+        backgroundColor: "#141414", borderRadius: 12,
+        paddingVertical: 16, borderWidth: 1, borderColor: "#222",
     },
-    name: {
-        color: "#ffffff",
-        fontSize: 20,
-        fontWeight: "bold",
-    },
-    email: {
-        color: "#b3b3b3",
-        fontSize: 14,
-        marginTop: 4,
-    },
-    menu: {
-        borderTopWidth: 1,
-        borderColor: "#2a2a2a",
-    },
-    menuItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderColor: "#2a2a2a",
-        gap: 12,
-    },
-    menuLabel: {
-        flex: 1,
-        color: "#ffffff",
-        fontSize: 15,
-    },
-    logoutBtn: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: 32,
-        marginHorizontal: 28,
-        paddingVertical: 14,
-        borderWidth: 1,
-        borderColor: "#e50914",
-        borderRadius: 8,
-    },
-    logoutText: {
-        color: "#e50914",
-        fontSize: 15,
-        fontWeight: "bold",
-    },
-    emptyTitle: {
-        color: "#ffffff",
-        fontSize: 18,
-        fontWeight: "bold",
-        marginTop: 16,
-    },
-    loginBtn: {
-        marginTop: 20,
-        backgroundColor: "#e50914",
-        borderRadius: 8,
-        paddingHorizontal: 28,
-        paddingVertical: 12,
-    },
-    loginBtnText: {
-        color: "#ffffff",
-        fontWeight: "bold",
-        fontSize: 15,
-    },
+    statItem:        { flex: 1, alignItems: "center", gap: 6 },
+    statLabel:       { color: "#b3b3b3", fontSize: 12 },
+    statDivider:     { width: 1, backgroundColor: "#222" },
+
+    menuSection:     { marginHorizontal: 16, marginBottom: 20 },
+    menuSectionTitle:{ color: "#555", fontSize: 11, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10, marginLeft: 4 },
+    menuItem:        { flexDirection: "row", alignItems: "center", backgroundColor: "#141414", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 8, gap: 12, borderWidth: 1, borderColor: "#1e1e1e" },
+    menuIconWrap:    { width: 36, height: 36, borderRadius: 10, backgroundColor: "#1c1c1c", justifyContent: "center", alignItems: "center" },
+    menuTextWrap:    { flex: 1 },
+    menuLabel:       { color: "#fff", fontSize: 15, fontWeight: "600" },
+    menuDesc:        { color: "#555", fontSize: 12, marginTop: 2 },
+
+    logoutBtn:       { flexDirection: "row", alignItems: "center", justifyContent: "center", marginHorizontal: 16, paddingVertical: 15, borderRadius: 12, backgroundColor: "#141414", gap: 10, borderWidth: 1, borderColor: "#2a2a2a" },
+    logoutText:      { color: "#e50914", fontSize: 15, fontWeight: "700" },
+
+    anonIcon:        { width: 80, height: 80, borderRadius: 40, backgroundColor: "#1c1c1c", justifyContent: "center", alignItems: "center", marginBottom: 20 },
+    anonTitle:       { color: "#fff", fontSize: 22, fontWeight: "bold", marginBottom: 8 },
+    anonSub:         { color: "#6e6e6e", fontSize: 14, textAlign: "center", lineHeight: 20, marginBottom: 28 },
+    loginBtn:        { backgroundColor: "#e50914", borderRadius: 8, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 12, width: "80%" },
+    loginBtnText:    { color: "#fff", fontWeight: "bold", fontSize: 15, textAlign: "center" },
+    registerBtn:     { backgroundColor: "transparent", borderRadius: 8, paddingHorizontal: 40, paddingVertical: 14, borderWidth: 1, borderColor: "#333", width: "80%" },
+    registerBtnText: { color: "#b3b3b3", fontSize: 15, textAlign: "center" },
 });
 
 export default ProfileScreen;

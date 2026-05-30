@@ -1,4 +1,6 @@
-const API = "http://192.168.1.39:5555/api/v1";
+// ── CẤU HÌNH IP ─────────────────────────────────────────────
+// ĐỔI IP NÀY THEO MÁY CỦA BẠN (ipconfig → IPv4 Address)
+export const API = "http://192.168.1.39:5555/api/v1";
 
 // ── MOVIES ──────────────────────────────────────
 export const SET_MOVIES          = "SET_MOVIES";
@@ -185,23 +187,12 @@ export const saveProgress = (movieId, progressSeconds, token) => async () => {
     } catch (err) {}
 };
 
-// FIX: kiểm tra res.ok trước khi dispatch, log lỗi rõ ràng
 export const removeHistory = (movieId, token) => async (dispatch) => {
     try {
-        console.log("[removeHistory] Deleting movieId:", movieId, "type:", typeof movieId);
         const res = await fetch(`${API}/history/${movieId}`, {
             method:  "DELETE",
             headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("[removeHistory] Response status:", res.status);
-        if (res.ok) {
-            dispatch({ type: REMOVE_HISTORY, payload: movieId });
-            console.log("[removeHistory] Dispatched REMOVE_HISTORY for:", movieId);
-        } else {
-            const body = await res.json().catch(() => ({}));
-            console.warn("[removeHistory] Server error:", res.status, body);
-        }
-    } catch (err) {
-        console.error("[removeHistory] Network error:", err.message);
-    }
+        if (res.ok) dispatch({ type: REMOVE_HISTORY, payload: movieId });
+    } catch (err) {}
 };
