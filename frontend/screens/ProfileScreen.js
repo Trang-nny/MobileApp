@@ -28,7 +28,6 @@ const ProfileScreen = ({ navigation }) => {
         );
     }
 
-    // Lấy 2 chữ cái đầu của tên (fallback khi không có avatar)
     const initials = user.full_name
         ? user.full_name.split(" ").map(w => w[0]).slice(-2).join("").toUpperCase()
         : "?";
@@ -52,7 +51,6 @@ const ProfileScreen = ({ navigation }) => {
                         style={StyleSheet.absoluteFillObject}
                     />
                     <View style={styles.avatarRing}>
-                        {/* Hiển thị ảnh avatar từ DB nếu có, ngược lại dùng chữ cái đầu */}
                         {user.avatar ? (
                             <Image source={{ uri: user.avatar }} style={styles.avatarImg} />
                         ) : (
@@ -67,24 +65,6 @@ const ProfileScreen = ({ navigation }) => {
                 <View style={styles.userInfo}>
                     <Text style={styles.name}>{user.full_name}</Text>
                     <Text style={styles.email}>{user.email}</Text>
-                </View>
-
-                {/* ── Stats row — nhấn được điều hướng ── */}
-                <View style={styles.statsRow}>
-                    <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate("Favorites")}>
-                        <Ionicons name="heart" size={20} color="#e50914" />
-                        <Text style={styles.statLabel}>Yêu thích</Text>
-                    </TouchableOpacity>
-                    <View style={styles.statDivider} />
-                    <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate("History")}>
-                        <Ionicons name="time" size={20} color="#e50914" />
-                        <Text style={styles.statLabel}>Lịch sử</Text>
-                    </TouchableOpacity>
-                    <View style={styles.statDivider} />
-                    <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate("EditProfile")}>
-                        <Ionicons name="person" size={20} color="#e50914" />
-                        <Text style={styles.statLabel}>Hồ sơ</Text>
-                    </TouchableOpacity>
                 </View>
 
                 {/* ── Menu ── */}
@@ -151,19 +131,10 @@ const styles = StyleSheet.create({
     avatarImg:       { width: "100%", height: "100%", borderRadius: 40 },
     avatarFallback:  { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", backgroundColor: "#1c1c1c" },
     avatarText:      { color: "#e50914", fontSize: 26, fontWeight: "900" },
-
-    userInfo:        { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 20 },
+    
+    userInfo:        { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 28 },
     name:            { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.3 },
     email:           { color: "#777", fontSize: 13, marginTop: 4 },
-
-    statsRow:        {
-        flexDirection: "row", marginHorizontal: 16, marginBottom: 28,
-        backgroundColor: "#141414", borderRadius: 12,
-        paddingVertical: 16, borderWidth: 1, borderColor: "#222",
-    },
-    statItem:        { flex: 1, alignItems: "center", gap: 6 },
-    statLabel:       { color: "#b3b3b3", fontSize: 12 },
-    statDivider:     { width: 1, backgroundColor: "#222" },
 
     menuSection:     { marginHorizontal: 16, marginBottom: 20 },
     menuSectionTitle:{ color: "#555", fontSize: 11, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10, marginLeft: 4 },

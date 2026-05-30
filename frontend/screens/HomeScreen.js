@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import {
     View, Text, FlatList, StyleSheet,
     TouchableOpacity, ScrollView, Image,
-    Dimensions, Animated,
+    Animated, useWindowDimensions,
 } from "react-native";
 import { SafeAreaView }            from "react-native-safe-area-context";
 import { LinearGradient }          from "expo-linear-gradient";
@@ -12,12 +12,6 @@ import { fetchPopularMovies, fetchMovies, addFavorite, removeFavorite } from "..
 import { API }                     from "../redux/actions";
 import SearchBar                   from "../components/SearchBar";
 import LoadingSpinner              from "../components/LoadingSpinner";
-
-const { width, height } = Dimensions.get("window");
-const BANNER_HEIGHT     = height * 0.55;
-const POSTER_W          = (width - 16 * 2 - 10 * 2) / 3;   // 3 cột nhỏ khi cuộn ngang
-const POSTER_ITEM_W     = 120;
-const POSTER_ITEM_H     = 175;
 
 const ASSETS_MAP = {
     "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
@@ -46,8 +40,7 @@ function resolveImg(movie) {
     return null;
 }
 
-// ── Auto-sliding Banner ──────────────────────────────────────────────────────
-const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch }) => {
+const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch, width, bannerHeight }) => {
     const [idx, setIdx]   = useState(0);
     const fadeAnim        = useRef(new Animated.Value(1)).current;
     const timerRef        = useRef(null);
@@ -90,7 +83,7 @@ const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch }) => {
     };
 
     return (
-        <View style={banner.wrap}>
+        <View style={[banner.wrap, { width, height: bannerHeight }]}>
             {/* Background image */}
             <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: fadeAnim }]}>
                 {imgSrc && (
@@ -153,7 +146,7 @@ const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch }) => {
 };
 
 const banner = StyleSheet.create({
-    wrap:      { width, height: BANNER_HEIGHT, position: "relative", backgroundColor: "#000" },
+    wrap:      { position: "relative", backgroundColor: "#000" },
     bg:        { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
     info:      { position: "absolute", bottom: 36, left: 16, right: 16 },
     genreRow:  { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10 },
@@ -171,6 +164,9 @@ const banner = StyleSheet.create({
 });
 
 // ── PosterItem (poster nhỏ hàng ngang) ───────────────────────────────────────
+const POSTER_ITEM_W = 120;
+const POSTER_ITEM_H = 175;
+
 const PosterItem = ({ movie, onPress }) => {
     const src = resolveImg(movie);
     return (
@@ -205,6 +201,11 @@ const poster = StyleSheet.create({
 
 // ── HomeScreen ────────────────────────────────────────────────────────────────
 const HomeScreen = ({ navigation }) => {
+    const { width, height } = useWindowDimensions();
+    const BANNER_HEIGHT = height * 0.55;
+    const GRID_W = (width - 16 * 2 - 8 * 2) / 3;
+    const GRID_H = GRID_W * 1.5;
+
     const dispatch      = useDispatch();
     const apiMovies     = useSelector(s => s.movies);
     const popularMovies = useSelector(s => s.popularMovies);
@@ -258,6 +259,8 @@ const HomeScreen = ({ navigation }) => {
                         token={token}
                         favoriteIds={favoriteIds}
                         dispatch={dispatch}
+                        width={width}
+                        bannerHeight={BANNER_HEIGHT}
                     />
                 )}
 
@@ -310,21 +313,21 @@ const HomeScreen = ({ navigation }) => {
                     </ScrollView>
                 ) : (
                     /* Khi tìm kiếm / lọc thể loại → grid 3 cột */
-                    <View style={styles.gridWrap}>
+                    <View style={[styles.gridWrap]}>
                         {baseMovies.length === 0 ? (
                             <Text style={styles.empty}>Không tìm thấy phim nào</Text>
                         ) : (
                             baseMovies.map(item => (
                                 <TouchableOpacity
                                     key={String(item.id)}
-                                    style={styles.gridItem}
+                                    style={[styles.gridItem, { width: GRID_W }]}
                                     onPress={() => navigation.navigate("MovieDetail", { movie: item })}
                                     activeOpacity={0.85}
                                 >
                                     {resolveImg(item) ? (
-                                        <Image source={resolveImg(item)} style={styles.gridImg} resizeMode="cover" />
+                                        <Image source={resolveImg(item)} style={[styles.gridImg, { width: GRID_W, height: GRID_H }]} resizeMode="cover" />
                                     ) : (
-                                        <View style={[styles.gridImg, styles.gridNoImg]}>
+                                        <View style={[styles.gridImg, styles.gridNoImg, { width: GRID_W, height: GRID_H }]}>
                                             <Ionicons name="film-outline" size={28} color="#333" />
                                         </View>
                                     )}
@@ -347,9 +350,6 @@ const HomeScreen = ({ navigation }) => {
     );
 };
 
-const GRID_W = (width - 16 * 2 - 8 * 2) / 3;
-const GRID_H = GRID_W * 1.5;
-
 const styles = StyleSheet.create({
     container:       { flex: 1, backgroundColor: "#0a0a0a" },
     filterWrap:      { paddingTop: 10 },
@@ -362,8 +362,8 @@ const styles = StyleSheet.create({
     sectionTitle:    { color: "#fff", fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
     hList:           { paddingHorizontal: 16, paddingBottom: 8 },
     gridWrap:        { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, gap: 8 },
-    gridItem:        { width: GRID_W, marginBottom: 14 },
-    gridImg:         { width: GRID_W, height: GRID_H, borderRadius: 8, backgroundColor: "#1c1c1c" },
+    gridItem:        { marginBottom: 14 },
+    gridImg:         { borderRadius: 8, backgroundColor: "#1c1c1c" },
     gridNoImg:       { justifyContent: "center", alignItems: "center" },
     gridBadge:       { position: "absolute", top: 6, right: 5, backgroundColor: "rgba(0,0,0,0.75)", paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
     gridBadgeText:   { color: "#f5a623", fontSize: 10, fontWeight: "bold" },

@@ -14,7 +14,7 @@ const RegisterScreen = ({ navigation }) => {
 
     const handleRegister = async () => {
         if (!fullName || !email || !password || !confirm) { Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin"); return; }
-        if (password.length < 8) { Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 8 ký tự"); return; }
+        if (password.length < 6) { Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 6 ký tự"); return; }
         if (password !== confirm) { Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp"); return; }
         const ok = await dispatch(register(fullName, email, password));
         if (ok) Alert.alert("Thành công", "Đăng ký thành công!", [{ text: "OK", onPress: () => navigation.navigate("Login") }]);
@@ -24,9 +24,9 @@ const RegisterScreen = ({ navigation }) => {
         <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <Text style={styles.title}>Tạo tài khoản</Text>
             {authError ? <Text style={styles.error}>{authError}</Text> : null}
-            <TextInput style={styles.input} placeholder="Họ và tên"       placeholderTextColor="#555" value={fullName}  onChangeText={setFullName} />
-            <TextInput style={styles.input} placeholder="Email"            placeholderTextColor="#555" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-            <TextInput style={styles.input} placeholder="Mật khẩu (≥ 8 ký tự)" placeholderTextColor="#555" secureTextEntry value={password} onChangeText={setPassword} />
+            <TextInput style={styles.input} placeholder="Họ và tên"            placeholderTextColor="#555" value={fullName}  onChangeText={setFullName} />
+            <TextInput style={styles.input} placeholder="Email"                placeholderTextColor="#555" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+            <TextInput style={styles.input} placeholder="Mật khẩu (≥ 6 ký tự)" placeholderTextColor="#555" secureTextEntry value={password} onChangeText={setPassword} />
             <TextInput style={styles.input} placeholder="Xác nhận mật khẩu"    placeholderTextColor="#555" secureTextEntry value={confirm}  onChangeText={setConfirm} />
             <TouchableOpacity style={[styles.btn, authLoading && { opacity: 0.6 }]} onPress={handleRegister} disabled={authLoading}>
                 <Text style={styles.btnText}>{authLoading ? "Đang xử lý..." : "Đăng ký"}</Text>

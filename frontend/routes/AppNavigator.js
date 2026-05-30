@@ -43,18 +43,19 @@ function MainTabs() {
     );
 }
 
-// Component trung gian: lắng nghe token, reset về Login khi đăng xuất
+// ── FIX: Khi token bị xoá (đăng xuất) → reset về Login, không phải MainTabs
 function RootNavigator() {
-    const token       = useSelector(s => s.token);
-    const navRef      = useRef(null);
-    const prevToken   = useRef(token);
+    const token     = useSelector(s => s.token);
+    const navRef    = useRef(null);
+    const prevToken = useRef(token);
 
     useEffect(() => {
-        // Chỉ xử lý khi token bị mất (đăng xuất), không xử lý lần đầu
+        // Chỉ xử lý khi token bị MẤT (đăng xuất), không xử lý lần đầu render
         if (prevToken.current && !token && navRef.current) {
             navRef.current.reset({
                 index: 0,
-                routes: [{ name: "MainTabs" }],
+                // FIX: Reset về Login (trước đây reset về MainTabs — sai)
+                routes: [{ name: "Login" }],
             });
         }
         prevToken.current = token;

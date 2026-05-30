@@ -11,10 +11,11 @@ const FavoritesScreen = ({ navigation }) => {
     const dispatch         = useDispatch();
     const token            = useSelector(s => s.token);
     const favoriteIds      = useSelector(s => s.favoriteIds);
-    const movies           = useSelector(s => s.movies);
+    // FIX: dùng favoriteMovies (đầy đủ thông tin từ API) thay vì lọc từ movies[]
+    // Trước đây: movies.filter(m => favoriteIds.includes(Number(m.id)))
+    // → lỗi vì movies[] chỉ chứa kết quả gần nhất, không có đủ phim yêu thích
+    const favoriteMovies   = useSelector(s => s.favoriteMovies);
     const favoritesLoading = useSelector(s => s.favoritesLoading);
-
-    const favoriteMovies = movies.filter(m => favoriteIds.includes(Number(m.id)));
 
     useEffect(() => {
         if (token) dispatch(fetchFavorites(token));
@@ -65,6 +66,7 @@ const FavoritesScreen = ({ navigation }) => {
                 contentContainerStyle={styles.list}
                 showsVerticalScrollIndicator={false}
                 renderItem={({ item: id }) => {
+                    // FIX: tìm trong favoriteMovies thay vì favoriteMovies filtered từ movies[]
                     const movie = favoriteMovies.find(m => Number(m.id) === id);
                     if (!movie) return null;
                     return (

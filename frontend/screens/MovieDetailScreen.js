@@ -1,14 +1,13 @@
 import React, { useEffect } from "react";
 import {
     View, Text, Image, ScrollView,
-    TouchableOpacity, StyleSheet, Linking, Dimensions,
+    TouchableOpacity, StyleSheet, Linking,
+    useWindowDimensions,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { Ionicons }            from "@expo/vector-icons";
 import Tag                     from "../components/Tag";
 import { addFavorite, removeFavorite, fetchMovieById } from "../redux/actions";
-
-const { width } = Dimensions.get("window");
 
 const ASSETS_MAP = {
     "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
@@ -43,6 +42,10 @@ function toWatchableUrl(url) {
 }
 
 const MovieDetailScreen = ({ route, navigation }) => {
+    const { width } = useWindowDimensions();
+    const POSTER_W = width * 0.55;
+    const POSTER_H = POSTER_W * 1.45;
+
     const { movie: passed } = route.params;
     const dispatch    = useDispatch();
     const token       = useSelector(s => s.token);
@@ -75,13 +78,13 @@ const MovieDetailScreen = ({ route, navigation }) => {
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
             {/* ── Header: backdrop + poster ── */}
-            <View style={styles.headerWrap}>
+            <View style={[styles.headerWrap, { width }]}>
                 {imgSource && (
                     <Image source={imgSource} style={styles.backdrop} blurRadius={10} />
                 )}
                 <View style={styles.darkOverlay} />
                 {imgSource && (
-                    <Image source={imgSource} style={styles.poster} resizeMode="cover" />
+                    <Image source={imgSource} style={[styles.poster, { width: POSTER_W, height: POSTER_H }]} resizeMode="cover" />
                 )}
                 <TouchableOpacity style={styles.favBtn} onPress={toggleFav}>
                     <Ionicons
@@ -112,7 +115,7 @@ const MovieDetailScreen = ({ route, navigation }) => {
                     </View>
                 </View>
 
-                {/* Tags thể loại — màu đỏ nổi bật như bản gốc */}
+                {/* Tags thể loại */}
                 <View style={styles.tags}>
                     {genres.map((g, i) => <Tag key={i} label={g} color="#e50914" />)}
                 </View>
@@ -122,7 +125,7 @@ const MovieDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.director}>🎬 {movie.director}</Text>
                 ) : null}
 
-                {/* Buttons — xem phim đỏ, trailer xám đậm */}
+                {/* Buttons */}
                 <View style={styles.btnGroup}>
                     <TouchableOpacity style={styles.watchBtn} onPress={handleWatch}>
                         <Ionicons name="play" size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -151,32 +154,29 @@ const MovieDetailScreen = ({ route, navigation }) => {
     );
 };
 
-const POSTER_W = width * 0.55;
-const POSTER_H = POSTER_W * 1.45;
-
 const styles = StyleSheet.create({
-    container:   { flex: 1, backgroundColor: "#0a0a0a" },
-    headerWrap:  { width, height: 380, justifyContent: "center", alignItems: "center", overflow: "hidden", backgroundColor: "#000" },
-    backdrop:    { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", opacity: 0.55 },
-    darkOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
-    poster:      { width: POSTER_W, height: POSTER_H, borderRadius: 12, borderWidth: 2, borderColor: "rgba(255,255,255,0.12)" },
-    favBtn:      { position: "absolute", bottom: 14, right: 16, backgroundColor: "rgba(0,0,0,0.65)", borderRadius: 24, padding: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" },
-    content:     { padding: 18 },
-    title:       { color: "#fff", fontSize: 26, fontWeight: "900", letterSpacing: -0.5, marginBottom: 12 },
-    metaRow:     { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
-    metaBadge:   { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#444", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
+    container:     { flex: 1, backgroundColor: "#0a0a0a" },
+    headerWrap:    { height: 380, justifyContent: "center", alignItems: "center", overflow: "hidden", backgroundColor: "#000" },
+    backdrop:      { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", opacity: 0.55 },
+    darkOverlay:   { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
+    poster:        { borderRadius: 12, borderWidth: 2, borderColor: "rgba(255,255,255,0.12)" },
+    favBtn:        { position: "absolute", bottom: 14, right: 16, backgroundColor: "rgba(0,0,0,0.65)", borderRadius: 24, padding: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" },
+    content:       { padding: 18 },
+    title:         { color: "#fff", fontSize: 26, fontWeight: "900", letterSpacing: -0.5, marginBottom: 12 },
+    metaRow:       { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
+    metaBadge:     { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#444", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
     metaBadgeText: { color: "#b3b3b3", fontSize: 12, fontWeight: "600" },
-    ratingBadge: { borderColor: "#f5a623" + "66" },
-    hdBadge:     { borderColor: "#46d36966" },
-    tags:        { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
-    director:    { color: "#b3b3b3", fontSize: 13, marginBottom: 20 },
-    btnGroup:    { flexDirection: "row", gap: 12, marginBottom: 28 },
-    watchBtn:    { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#e50914", borderRadius: 8, height: 54 },
-    watchText:   { color: "#fff", fontSize: 16, fontWeight: "900" },
-    trailerBtn:  { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#2a2a2a", borderRadius: 8, height: 54, borderWidth: 1, borderColor: "#444" },
-    trailerText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-    sectionLabel:{ color: "#fff", fontSize: 17, fontWeight: "800", marginBottom: 8 },
-    desc:        { color: "#bbb", fontSize: 14, lineHeight: 22, marginBottom: 20 },
+    ratingBadge:   { borderColor: "#f5a62366" },
+    hdBadge:       { borderColor: "#46d36966" },
+    tags:          { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
+    director:      { color: "#b3b3b3", fontSize: 13, marginBottom: 20 },
+    btnGroup:      { flexDirection: "row", gap: 12, marginBottom: 28 },
+    watchBtn:      { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#e50914", borderRadius: 8, height: 54 },
+    watchText:     { color: "#fff", fontSize: 16, fontWeight: "900" },
+    trailerBtn:    { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#2a2a2a", borderRadius: 8, height: 54, borderWidth: 1, borderColor: "#444" },
+    trailerText:   { color: "#fff", fontSize: 15, fontWeight: "700" },
+    sectionLabel:  { color: "#fff", fontSize: 17, fontWeight: "800", marginBottom: 8 },
+    desc:          { color: "#bbb", fontSize: 14, lineHeight: 22, marginBottom: 20 },
 });
 
 export default MovieDetailScreen;

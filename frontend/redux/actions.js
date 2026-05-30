@@ -119,6 +119,7 @@ export const updateProfile = (profileData, token) => async (dispatch) => {
 
 // ── FAVORITES ────────────────────────────────────
 export const SET_FAVORITES         = "SET_FAVORITES";
+export const SET_FAVORITE_MOVIES   = "SET_FAVORITE_MOVIES";   // FIX: lưu riêng danh sách phim yêu thích đầy đủ
 export const ADD_FAVORITE          = "ADD_FAVORITE";
 export const REMOVE_FAVORITE       = "REMOVE_FAVORITE";
 export const SET_FAVORITES_LOADING = "SET_FAVORITES_LOADING";
@@ -130,7 +131,9 @@ export const fetchFavorites = (token) => async (dispatch) => {
             headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        dispatch({ type: SET_FAVORITES, payload: data });
+        // FIX: lưu cả mảng id LẪN mảng phim đầy đủ để FavoritesScreen hiển thị đúng
+        dispatch({ type: SET_FAVORITES,       payload: data });
+        dispatch({ type: SET_FAVORITE_MOVIES, payload: data });
     } catch (err) {
     } finally {
         dispatch({ type: SET_FAVORITES_LOADING, payload: false });
