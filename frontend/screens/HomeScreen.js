@@ -12,14 +12,8 @@ import { fetchPopularMovies, fetchMovies, addFavorite, removeFavorite } from "..
 import { API }                     from "../redux/actions";
 import { useFocusEffect }             from "@react-navigation/native";
 import LoadingSpinner              from "../components/LoadingSpinner";
+import SearchBar                  from "../components/SearchBar";
 
-const ASSETS_MAP = {
-    "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
-    "Spider-Man: No Way Home": require("../assets/Spiderman_No_Way_Home.jpg"),
-    "Titanic":                 require("../assets/Titanic.jpg"),
-    "Zootopia":                require("../assets/Zootopia.jpg"),
-    "Paddington in Peru":      require("../assets/Paddington-Peru.jpg"),
-};
 const TMDB = "https://image.tmdb.org";
 
 function normPoster(url) {
@@ -34,7 +28,6 @@ function normPoster(url) {
 
 function resolveImg(movie) {
     if (!movie) return null;
-    if (ASSETS_MAP[movie.title]) return ASSETS_MAP[movie.title];
     const p = normPoster(movie.poster_url);
     if (p) return { uri: p };
     return null;

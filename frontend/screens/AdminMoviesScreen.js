@@ -5,10 +5,29 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons }     from "@expo/vector-icons";
-import { useSelector }  from "react-redux";
-import { API }          from "../redux/actions";
+import { useSelector, useDispatch }  from "react-redux";
+import { API, fetchPopularMovies, fetchMovies } from "../redux/actions";
 
-// ── Form thêm/sửa phim (Modal) ────────────────────────────
+const TMDB = "https://image.tmdb.org";
+
+function normPoster(url) {
+    if (!url) return null;
+    url = String(url).trim();
+    if (url.startsWith("http://") || url.startsWith("https://"))
+        return url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    if (url.startsWith("/t/p/")) return TMDB + url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    if (url.startsWith("/"))    return `${TMDB}/t/p/w500${url}`;
+    return `${TMDB}/t/p/w500/${url}`;
+}
+
+function resolveImg(movie) {
+    if (!movie) return null;
+    const p = normPoster(movie.poster_url);
+    if (p) return { uri: p };
+    return null;
+}
+
+// ── Form thêm/sửa phim (Modal) ───
 const MovieFormModal = ({ visible, movie, genres, token, onClose, onSaved }) => {
     const isEdit = !!movie;
 
@@ -134,7 +153,7 @@ const MovieFormModal = ({ visible, movie, genres, token, onClose, onSaved }) => 
     );
 };
 
-// ── Input nhỏ tái sử dụng ─────────────────────────────────
+// ── Input nhỏ tái sử dụng ──
 const Field = ({ label, value, onChange, multiline, keyboardType }) => (
     <View style={modal.fieldWrap}>
         <Text style={modal.fieldLabel}>{label}</Text>
@@ -150,9 +169,10 @@ const Field = ({ label, value, onChange, multiline, keyboardType }) => (
     </View>
 );
 
-// ── Màn hình chính ────────────────────────────────────────
+// ── Màn hình chính ──
 export default function AdminMoviesScreen() {
-    const token = useSelector(s => s.token);
+    const token    = useSelector(s => s.token);
+    const dispatch = useDispatch();
 
     const [movies,  setMovies]  = useState([]);
     const [genres,  setGenres]  = useState([]);
@@ -173,6 +193,9 @@ export default function AdminMoviesScreen() {
             ]);
             setMovies(await mRes.json());
             setGenres(await gRes.json());
+            // Cập nhật redux để HomeScreen tự refresh
+            dispatch(fetchPopularMovies());
+            dispatch(fetchMovies());
         } catch (e) {
             Alert.alert("Lỗi", "Không tải được dữ liệu");
         } finally {
@@ -210,12 +233,21 @@ export default function AdminMoviesScreen() {
         m.title?.toLowerCase().includes(search.toLowerCase())
     );
 
-    const renderMovie = ({ item }) => (
+    const renderMovie = ({ item }) => {
+        const imgSrc = resolveImg(item);
+        return (
         <View style={styles.row}>
-            <Image
-                source={{ uri: item.poster_url }}
-                style={styles.poster}
-            />
+            {imgSrc ? (
+                <Image
+                    source={imgSrc}
+                    style={styles.poster}
+                    onError={() => {}}
+                />
+            ) : (
+                <View style={[styles.poster, styles.posterFallback]}>
+                    <Ionicons name="film-outline" size={20} color="#333" />
+                </View>
+            )}
             <View style={styles.info}>
                 <Text style={styles.movieTitle} numberOfLines={1}>{item.title}</Text>
                 <Text style={styles.movieMeta}>{item.year}  ·  ⭐ {item.rating}</Text>
@@ -236,9 +268,10 @@ export default function AdminMoviesScreen() {
             </View>
         </View>
     );
+    };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={["bottom"]}>
             {/* Thanh tìm kiếm + nút Thêm */}
             <View style={styles.topBar}>
                 <View style={styles.searchWrap}>
@@ -286,7 +319,7 @@ export default function AdminMoviesScreen() {
     );
 }
 
-// ── Styles màn hình ───────────────────────────────────────
+// ── Styles màn hình ──
 const styles = StyleSheet.create({
     container:    { flex: 1, backgroundColor: "#0a0a0a" },
     topBar:       { flexDirection: "row", alignItems: "center", gap: 10,
@@ -304,6 +337,7 @@ const styles = StyleSheet.create({
                     marginHorizontal: 16, marginBottom: 8, borderRadius: 12,
                     padding: 10, borderWidth: 1, borderColor: "#1e1e1e", gap: 10 },
     poster:       { width: 46, height: 66, borderRadius: 6, backgroundColor: "#1c1c1c" },
+    posterFallback: { justifyContent: "center", alignItems: "center" },
     info:         { flex: 1, gap: 3 },
     movieTitle:   { color: "#fff", fontWeight: "700", fontSize: 14 },
     movieMeta:    { color: "#777", fontSize: 12 },
@@ -316,7 +350,7 @@ const styles = StyleSheet.create({
     empty:        { color: "#555", textAlign: "center", marginTop: 40 },
 });
 
-// ── Styles Modal ──────────────────────────────────────────
+// ── Styles Modal ──
 const modal = StyleSheet.create({
     container:        { flex: 1, backgroundColor: "#0a0a0a" },
     header:           { flexDirection: "row", justifyContent: "space-between", alignItems: "center",

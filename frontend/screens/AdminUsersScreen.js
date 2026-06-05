@@ -109,7 +109,7 @@ export default function AdminUsersScreen() {
     const userCount  = users.filter(u => u.role === "user").length;
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={["bottom"]}>
             {/* Summary */}
             <View style={styles.summary}>
                 <View style={styles.summaryItem}>

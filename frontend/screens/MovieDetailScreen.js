@@ -9,28 +9,21 @@ import { Ionicons }            from "@expo/vector-icons";
 import Tag                     from "../components/Tag";
 import { addFavorite, removeFavorite, fetchMovieById } from "../redux/actions";
 
-const ASSETS_MAP = {
-    "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
-    "Spider-Man: No Way Home": require("../assets/Spiderman_No_Way_Home.jpg"),
-    "Titanic":                 require("../assets/Titanic.jpg"),
-    "Zootopia":                require("../assets/Zootopia.jpg"),
-    "Paddington in Peru":      require("../assets/Paddington-Peru.jpg"),
-};
+const TMDB = "https://image.tmdb.org";
 
 function normalizeUrl(url) {
     if (!url) return null;
-    url = url.trim();
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    if (url.startsWith("/t/p/")) return `https://image.tmdb.org${url}`;
-    if (url.startsWith("/"))     return `https://image.tmdb.org/t/p/w500${url}`;
-    return `https://image.tmdb.org/t/p/w500/${url}`;
+    url = String(url).trim();
+    if (url.startsWith("http://") || url.startsWith("https://"))
+        return url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    if (url.startsWith("/t/p/")) return TMDB + url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    if (url.startsWith("/"))    return `${TMDB}/t/p/w500${url}`;
+    return `${TMDB}/t/p/w500/${url}`;
 }
 
 function resolveSource(movie) {
     if (!movie) return null;
-    if (ASSETS_MAP[movie.title]) return ASSETS_MAP[movie.title];
     if (movie.poster_url) return { uri: normalizeUrl(movie.poster_url) };
-    if (movie.image)      return movie.image;
     return null;
 }
 

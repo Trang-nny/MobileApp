@@ -74,24 +74,24 @@ const VideoPlayerScreen = ({ route, navigation }) => {
     }, [elapsed]);
 
     const embedHtml = youtubeId ? `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    * { margin: 0; padding: 0; background: #000; }
-    body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; }
-    iframe { width: 100vw; height: 56.25vw; border: none; }
-  </style>
-</head>
-<body>
-  <iframe
-    src="https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&start=${startAt}"
-    allow="autoplay; fullscreen"
-    allowfullscreen>
-  </iframe>
-</body>
-</html>` : null;
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; background: #000; }
+        body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        iframe { width: 100vw; height: 56.25vw; border: none; }
+    </style>
+    </head>
+    <body>
+    <iframe
+        src="https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&start=${startAt}"
+        allow="autoplay; fullscreen"
+        allowfullscreen>
+    </iframe>
+    </body>
+    </html>` : null;
 
     return (
         <View style={styles.container}>
@@ -130,9 +130,10 @@ const VideoPlayerScreen = ({ route, navigation }) => {
                     </View>
                 )}
 
-                {/* Nút back đè lên góc trái */}
+                {/* Nút back — luôn hiển thị rõ góc trái */}
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="chevron-back" size={26} color="#fff" />
+                    <Ionicons name="chevron-back" size={24} color="#fff" />
+                    <Text style={styles.backText}>Quay lại</Text>
                 </TouchableOpacity>
             </View>
 
@@ -164,7 +165,14 @@ const styles = StyleSheet.create({
     videoArea:    { width: SCREEN_WIDTH, height: SCREEN_WIDTH * (9 / 16), backgroundColor: "#000" },
     webview:      { flex: 1, backgroundColor: "#000" },
     loaderOverlay:{ ...StyleSheet.absoluteFillObject, backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
-    backBtn:      { position: "absolute", top: 12, left: 12, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 20, padding: 6 },
+    backBtn:      {
+        position: "absolute", top: 12, left: 12,
+        flexDirection: "row", alignItems: "center", gap: 4,
+        backgroundColor: "rgba(0,0,0,0.7)",
+        borderRadius: 20, paddingVertical: 6, paddingHorizontal: 10,
+        borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
+    },
+    backText:     { color: "#fff", fontSize: 13, fontWeight: "600" },
     placeholder:  { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
     placeholderTitle: { color: "#fff", fontSize: 18, fontWeight: "bold", marginTop: 16, textAlign: "center" },
     placeholderSub:   { color: "#555", fontSize: 13, marginTop: 10, textAlign: "center", lineHeight: 20 },

@@ -28,15 +28,22 @@ const LoginScreen = ({ navigation }) => {
         await dispatch(login(email.trim(), password));
     };
 
+    const canGoBack = navigation.canGoBack();
+
     return (
         <>
             <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
+            {canGoBack && (
+                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                    <Ionicons name="chevron-back" size={24} color="#fff" />
+                </TouchableOpacity>
+            )}
             <KeyboardAvoidingView
                 style={styles.root}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
                 <ScrollView
-                    contentContainerStyle={styles.scroll}
+                    contentContainerStyle={[styles.scroll, canGoBack && { paddingTop: 60 }]}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
@@ -152,6 +159,12 @@ const LoginScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     root:   { flex: 1, backgroundColor: "#0a0a0a" },
+    backBtn: {
+        position: "absolute", top: 44, left: 16, zIndex: 10,
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderRadius: 20, padding: 8,
+        borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
+    },
     scroll: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 40 },
 
     // Logo

@@ -9,23 +9,18 @@ import { Ionicons }            from "@expo/vector-icons";
 import { fetchHistory, removeHistory } from "../redux/actions";
 import LoadingSpinner from "../components/LoadingSpinner";
 
-// Map ảnh local — giống MovieCard.js
-const ASSETS_MAP = {
-    "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
-    "Spider-Man: No Way Home": require("../assets/Spiderman_No_Way_Home.jpg"),
-    "Titanic":                 require("../assets/Titanic.jpg"),
-    "Zootopia":                require("../assets/Zootopia.jpg"),
-    "Paddington in Peru":      require("../assets/Paddington-Peru.jpg"),
-};
-
 // Chuẩn hoá URL TMDB về w500
 function normalizePosterUrl(url) {
     if (!url) return null;
-    return url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    url = String(url).trim();
+    if (url.startsWith("http://") || url.startsWith("https://"))
+        return url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    if (url.startsWith("/t/p/")) return "https://image.tmdb.org" + url.replace(/\/t\/p\/(w\d+|original)\//, "/t/p/w500/");
+    if (url.startsWith("/"))    return `https://image.tmdb.org/t/p/w500${url}`;
+    return `https://image.tmdb.org/t/p/w500/${url}`;
 }
 
 function resolveSource(item) {
-    if (ASSETS_MAP[item.title]) return ASSETS_MAP[item.title];
     const normalized = normalizePosterUrl(item.poster_url);
     if (normalized) return { uri: normalized };
     return null;
@@ -40,7 +35,7 @@ function formatTime(seconds) {
     return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// ─── HistoryItem ────────────────────────────────────────────────────────────
+// ─── HistoryItem ──
 
 const HistoryItem = ({ item, onPress, onDelete }) => {
     const source = resolveSource(item);
@@ -117,7 +112,7 @@ const item_s = StyleSheet.create({
     progressText: { color: "#555", fontSize: 11 },
 });
 
-// ─── HistoryScreen ───────────────────────────────────────────────────────────
+// ─── HistoryScreen ────
 
 const HistoryScreen = ({ navigation }) => {
     const dispatch       = useDispatch();

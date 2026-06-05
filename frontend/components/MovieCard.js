@@ -6,14 +6,6 @@ const { width } = Dimensions.get("window");
 const CARD_WIDTH  = (width - 16 * 2 - 12) / 2;   // 2 cột, padding 16, gap 12
 const CARD_HEIGHT = CARD_WIDTH * 1.5;              // tỷ lệ poster 2:3
 
-const ASSETS_MAP = {
-    "Avengers: Endgame":       require("../assets/Avenger-Endgame.jpg"),
-    "Spider-Man: No Way Home": require("../assets/Spiderman_No_Way_Home.jpg"),
-    "Titanic":                 require("../assets/Titanic.jpg"),
-    "Zootopia":                require("../assets/Zootopia.jpg"),
-    "Paddington in Peru":      require("../assets/Paddington-Peru.jpg"),
-};
-
 const TMDB_BASE = "https://image.tmdb.org";
 
 function normalizePosterUrl(url) {
@@ -29,10 +21,9 @@ function normalizePosterUrl(url) {
 }
 
 function resolveSource(title, poster_url, image) {
-    if (ASSETS_MAP[title])              return ASSETS_MAP[title];
     const norm = normalizePosterUrl(poster_url);
-    if (norm)                           return { uri: norm };
-    if (image)                          return image;
+    if (norm)  return { uri: norm };
+    if (image) return image;
     return null;
 }
 
@@ -46,7 +37,7 @@ const MovieCard = ({
     const showHeart = typeof isFavorite !== "undefined" && onToggleFavorite;
     const [imgErr, setImgErr] = useState(false);
 
-    // ── Variant: "row" (màn hình Yêu thích / Lịch sử) ──────────────────────
+    // ── Variant: "row" (màn hình Yêu thích / Lịch sử) ──
     if (variant === "row") {
         return (
             <TouchableOpacity style={row.card} onPress={onPress} activeOpacity={0.8}>
@@ -78,7 +69,7 @@ const MovieCard = ({
         );
     }
 
-    // ── Variant: "grid" (màn hình Home) ────────────────────────────────────
+    // ── Variant: "grid" (màn hình Home) ───
     return (
         <TouchableOpacity style={grid.card} onPress={onPress} activeOpacity={0.85}>
             {/* Poster */}
@@ -117,7 +108,7 @@ const MovieCard = ({
     );
 };
 
-// ── Styles: grid ──────────────────────────────────────────────────────────────
+// ── Styles: grid ──
 const grid = StyleSheet.create({
     card:   {
         width:  CARD_WIDTH,
@@ -144,17 +135,13 @@ const grid = StyleSheet.create({
     overlay: {
         position: "absolute", bottom: 0, left: 0, right: 0,
         paddingHorizontal: 8, paddingVertical: 8,
-        background: "transparent",
-        // Gradient đen dần từ dưới lên
-        backgroundImage: "linear-gradient(transparent, rgba(0,0,0,0.9))",
-        // React Native không có backgroundImage, dùng backgroundColor mờ
         backgroundColor: "rgba(0,0,0,0.65)",
     },
     title:  { color: "#fff",    fontSize: 13, fontWeight: "bold", marginBottom: 2 },
     year:   { color: "#b3b3b3", fontSize: 11 },
 });
 
-// ── Styles: row ───────────────────────────────────────────────────────────────
+// ── Styles: row ──
 const row = StyleSheet.create({
     card:     {
         backgroundColor: "#1c1c1c", borderRadius: 10,
