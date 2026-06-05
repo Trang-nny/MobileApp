@@ -341,4 +341,4 @@ app.delete("/api/v1/history/:movieId", authMiddleware, (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────
-app.listen(5555, () => console.log("MovieApp Server running at http://192.168.1.39:5555"));
+app.listen(5555, () => console.log("MovieApp Server running at http://192.168.1.59:5555"));

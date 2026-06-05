@@ -1,9 +1,8 @@
-import React, { useEffect, useRef } from "react";
-import { NavigationContainer }       from "@react-navigation/native";
-import { createStackNavigator }      from "@react-navigation/stack";
-import { createBottomTabNavigator }  from "@react-navigation/bottom-tabs";
-import { Ionicons }                  from "@expo/vector-icons";
-import { useSelector }               from "react-redux";
+import React from "react";
+import { NavigationContainer }      from "@react-navigation/native";
+import { createStackNavigator }     from "@react-navigation/stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons }                 from "@expo/vector-icons";
 
 import HomeScreen        from "../screens/HomeScreen";
 import MovieDetailScreen from "../screens/MovieDetailScreen";
@@ -12,8 +11,8 @@ import ProfileScreen     from "../screens/ProfileScreen";
 import LoginScreen       from "../screens/LoginScreen";
 import RegisterScreen    from "../screens/RegisterScreen";
 import HistoryScreen     from "../screens/HistoryScreen";
-import EditProfileScreen from "../screens/EditProfileScreen";
 import VideoPlayerScreen from "../screens/VideoPlayerScreen";
+import EditProfileScreen from "../screens/EditProfileScreen";
 
 const Tab   = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -23,16 +22,23 @@ function MainTabs() {
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
-                tabBarStyle:             { backgroundColor: "#000000", borderTopColor: "#1c1c1c" },
-                tabBarActiveTintColor:   "#ffffff",
-                tabBarInactiveTintColor: "#6e6e6e",
+                tabBarStyle: {
+                    backgroundColor: "#000",
+                    borderTopColor: "#1c1c1c",
+                    borderTopWidth: 1,
+                    height: 60,
+                    paddingBottom: 8,
+                },
+                tabBarActiveTintColor:   "#fff",
+                tabBarInactiveTintColor: "#555",
+                tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
                 tabBarIcon: ({ focused, color, size }) => {
                     const map = {
-                        Home:      ["home",   "home-outline"  ],
-                        Favorites: ["heart",  "heart-outline" ],
-                        Profile:   ["person", "person-outline"],
+                        Home:      focused ? "home"   : "home-outline",
+                        Favorites: focused ? "heart"  : "heart-outline",
+                        Profile:   focused ? "person" : "person-outline",
                     };
-                    return <Ionicons name={map[route.name][focused ? 0 : 1]} size={size} color={color} />;
+                    return <Ionicons name={map[route.name]} size={size} color={color} />;
                 },
             })}
         >
@@ -43,48 +49,56 @@ function MainTabs() {
     );
 }
 
-// ── FIX: Khi token bị xoá (đăng xuất) → reset về Login, không phải MainTabs
-function RootNavigator() {
-    const token     = useSelector(s => s.token);
-    const navRef    = useRef(null);
-    const prevToken = useRef(token);
-
-    useEffect(() => {
-        // Chỉ xử lý khi token bị MẤT (đăng xuất), không xử lý lần đầu render
-        if (prevToken.current && !token && navRef.current) {
-            navRef.current.reset({
-                index: 0,
-                // FIX: Reset về Login (trước đây reset về MainTabs — sai)
-                routes: [{ name: "Login" }],
-            });
-        }
-        prevToken.current = token;
-    }, [token]);
-
+export default function AppNavigator() {
     return (
-        <NavigationContainer ref={navRef}>
+        <NavigationContainer>
             <Stack.Navigator
                 screenOptions={{
-                    headerStyle:      { backgroundColor: "#141414" },
-                    headerTintColor:  "#ffffff",
-                    headerTitleStyle: { fontWeight: "bold" },
+                    headerStyle:      { backgroundColor: "#141414", shadowColor: "transparent", elevation: 0 },
+                    headerTintColor:  "#fff",
+                    headerTitleStyle: { fontWeight: "bold", fontSize: 17 },
                     cardStyle:        { backgroundColor: "#0a0a0a" },
                 }}
             >
-                <Stack.Screen name="MainTabs"    component={MainTabs}          options={{ headerShown: false }} />
-                <Stack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: "Chi Tiết Phim"    }} />
-                <Stack.Screen name="Login"       component={LoginScreen}       options={{ title: "Đăng Nhập"       }} />
-                <Stack.Screen name="Register"    component={RegisterScreen}    options={{ title: "Đăng Ký"         }} />
-                <Stack.Screen name="History"     component={HistoryScreen}     options={{ title: "Lịch Sử Xem"     }} />
-                <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: "Chỉnh Sửa Hồ Sơ" }} />
+                <Stack.Screen
+                    name="MainTabs"
+                    component={MainTabs}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="MovieDetail"
+                    component={MovieDetailScreen}
+                    options={{ title: "Chi Tiết Phim" }}
+                />
+
+                {/* Auth — ẨN header mặc định, dùng giao diện tự thiết kế */}
+                <Stack.Screen
+                    name="Login"
+                    component={LoginScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="Register"
+                    component={RegisterScreen}
+                    options={{ headerShown: false }}
+                />
+
+                <Stack.Screen
+                    name="History"
+                    component={HistoryScreen}
+                    options={{ title: "Lịch Sử Xem" }}
+                />
                 <Stack.Screen
                     name="VideoPlayer"
                     component={VideoPlayerScreen}
-                    options={{ headerShown: false }}
+                    options={{ title: "Đang Xem", headerShown: false }}
+                />
+                <Stack.Screen
+                    name="EditProfile"
+                    component={EditProfileScreen}
+                    options={{ title: "Chỉnh Sửa Hồ Sơ" }}
                 />
             </Stack.Navigator>
         </NavigationContainer>
     );
 }
-
-export default RootNavigator;

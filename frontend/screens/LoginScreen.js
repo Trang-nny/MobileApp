@@ -1,140 +1,241 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import {
+    View, Text, TextInput, TouchableOpacity,
+    StyleSheet, KeyboardAvoidingView, Platform,
+    ScrollView, StatusBar,
+} from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import { Ionicons } from "@expo/vector-icons";
 import { login } from "../redux/actions";
 
 const LoginScreen = ({ navigation }) => {
-    const [email,    setEmail]    = useState("");
-    const [password, setPassword] = useState("");
+    const [email,       setEmail]       = useState("");
+    const [password,    setPassword]    = useState("");
+    const [showPass,    setShowPass]    = useState(false);
     const dispatch    = useDispatch();
     const authLoading = useSelector(s => s.authLoading);
     const authError   = useSelector(s => s.authError);
     const token       = useSelector(s => s.token);
 
-    // Khi token xuất hiện (đăng nhập thành công) → tự động quay về
     useEffect(() => {
         if (token) {
-            navigation.reset({
-                index: 0,
-                routes: [{ name: "MainTabs" }],
-            });
+            navigation.reset({ index: 0, routes: [{ name: "MainTabs" }] });
         }
     }, [token]);
 
     const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
-            return;
-        }
-        await dispatch(login(email, password));
+        if (!email.trim() || !password) return;
+        await dispatch(login(email.trim(), password));
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-            <Text style={styles.logo}>🎬 MovieApp</Text>
-            <Text style={styles.title}>Đăng nhập</Text>
-
-            {authError ? <Text style={styles.error}>{authError}</Text> : null}
-
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#555"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Mật khẩu"
-                placeholderTextColor="#555"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-            />
-            <TouchableOpacity
-                style={[styles.btn, authLoading && { opacity: 0.6 }]}
-                onPress={handleLogin}
-                disabled={authLoading}
+        <>
+            <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
+            <KeyboardAvoidingView
+                style={styles.root}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
-                <Text style={styles.btnText}>
-                    {authLoading ? "Đang đăng nhập..." : "Đăng nhập"}
-                </Text>
-            </TouchableOpacity>
+                <ScrollView
+                    contentContainerStyle={styles.scroll}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* ── Logo vùng trên ── */}
+                    <View style={styles.logoWrap}>
+                        <View style={styles.logoIcon}>
+                            <Text style={styles.logoEmoji}>🎬</Text>
+                        </View>
+                        <Text style={styles.logoName}>MovieApp</Text>
+                        <Text style={styles.logoTagline}>Xem phim mọi lúc, mọi nơi</Text>
+                    </View>
 
-            <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-                <Text style={styles.link}>
-                    Chưa có tài khoản? <Text style={styles.linkRed}>Đăng ký</Text>
-                </Text>
-            </TouchableOpacity>
-        </KeyboardAvoidingView>
+                    {/* ── Form card ── */}
+                    <View style={styles.card}>
+                        <Text style={styles.cardTitle}>Đăng nhập</Text>
+
+                        {/* Thông báo lỗi */}
+                        {authError ? (
+                            <View style={styles.errorBox}>
+                                <Ionicons name="alert-circle-outline" size={16} color="#e50914" />
+                                <Text style={styles.errorText}>{authError}</Text>
+                            </View>
+                        ) : null}
+
+                        {/* Email */}
+                        <View style={styles.inputWrap}>
+                            <Ionicons name="mail-outline" size={18} color="#555" style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Email"
+                                placeholderTextColor="#555"
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                                value={email}
+                                onChangeText={setEmail}
+                                returnKeyType="next"
+                            />
+                        </View>
+
+                        {/* Mật khẩu */}
+                        <View style={styles.inputWrap}>
+                            <Ionicons name="lock-closed-outline" size={18} color="#555" style={styles.inputIcon} />
+                            <TextInput
+                                style={[styles.input, { flex: 1 }]}
+                                placeholder="Mật khẩu"
+                                placeholderTextColor="#555"
+                                secureTextEntry={!showPass}
+                                value={password}
+                                onChangeText={setPassword}
+                                returnKeyType="done"
+                                onSubmitEditing={handleLogin}
+                            />
+                            <TouchableOpacity onPress={() => setShowPass(!showPass)} style={styles.eyeBtn}>
+                                <Ionicons
+                                    name={showPass ? "eye-off-outline" : "eye-outline"}
+                                    size={18}
+                                    color="#555"
+                                />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Nút đăng nhập */}
+                        <TouchableOpacity
+                            style={[styles.btn, (authLoading || !email || !password) && styles.btnDisabled]}
+                            onPress={handleLogin}
+                            disabled={authLoading || !email || !password}
+                            activeOpacity={0.85}
+                        >
+                            {authLoading ? (
+                                <View style={styles.btnInner}>
+                                    <Ionicons name="reload-outline" size={18} color="#fff" />
+                                    <Text style={styles.btnText}>Đang đăng nhập...</Text>
+                                </View>
+                            ) : (
+                                <View style={styles.btnInner}>
+                                    <Ionicons name="log-in-outline" size={18} color="#fff" />
+                                    <Text style={styles.btnText}>Đăng nhập</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        {/* Phân cách */}
+                        <View style={styles.dividerRow}>
+                            <View style={styles.divider} />
+                            <Text style={styles.dividerText}>hoặc</Text>
+                            <View style={styles.divider} />
+                        </View>
+
+                        {/* Link đăng ký */}
+                        <TouchableOpacity
+                            style={styles.secondaryBtn}
+                            onPress={() => navigation.navigate("Register")}
+                        >
+                            <Text style={styles.secondaryBtnText}>Tạo tài khoản mới</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Footer */}
+                    <Text style={styles.footer}>
+                        Chưa có tài khoản?{" "}
+                        <Text
+                            style={styles.footerLink}
+                            onPress={() => navigation.navigate("Register")}
+                        >
+                            Đăng ký ngay
+                        </Text>
+                    </Text>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#0a0a0a",
-        justifyContent: "center",
-        paddingHorizontal: 28,
-    },
-    logo: {
-        fontSize: 28,
-        textAlign: "center",
-        marginBottom: 8,
-        color: "#ffffff",
-    },
-    title: {
-        fontSize: 26,
-        fontWeight: "bold",
-        color: "#fff",
-        textAlign: "center",
-        marginBottom: 28,
-    },
-    error: {
-        color: "#e50914",
-        textAlign: "center",
-        marginBottom: 12,
-        fontSize: 13,
-    },
-    input: {
-        backgroundColor: "#1c1c1c",
-        color: "#fff",
-        borderWidth: 1,
-        borderColor: "#2a2a2a",
-        borderRadius: 8,
-        paddingHorizontal: 14,
-        height: 48,
-        fontSize: 15,
+    root:   { flex: 1, backgroundColor: "#0a0a0a" },
+    scroll: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 40 },
+
+    // Logo
+    logoWrap:    { alignItems: "center", marginBottom: 36 },
+    logoIcon:    {
+        width: 72, height: 72, borderRadius: 20,
+        backgroundColor: "#e50914",
+        justifyContent: "center", alignItems: "center",
         marginBottom: 14,
+        shadowColor: "#e50914",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.45,
+        shadowRadius: 16,
+        elevation: 10,
     },
+    logoEmoji:   { fontSize: 36 },
+    logoName:    { color: "#fff", fontSize: 30, fontWeight: "900", letterSpacing: -0.5 },
+    logoTagline: { color: "#555", fontSize: 13, marginTop: 6 },
+
+    // Card
+    card:      {
+        backgroundColor: "#141414",
+        borderRadius: 16,
+        padding: 24,
+        borderWidth: 1,
+        borderColor: "#222",
+        marginBottom: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    cardTitle: { color: "#fff", fontSize: 22, fontWeight: "800", marginBottom: 20, letterSpacing: -0.3 },
+
+    // Error
+    errorBox:  {
+        flexDirection: "row", alignItems: "center", gap: 8,
+        backgroundColor: "#e509141a",
+        borderWidth: 1, borderColor: "#e5091440",
+        borderRadius: 8, padding: 10, marginBottom: 16,
+    },
+    errorText: { color: "#e50914", fontSize: 13, flex: 1 },
+
+    // Input
+    inputWrap: {
+        flexDirection: "row", alignItems: "center",
+        backgroundColor: "#1c1c1c",
+        borderWidth: 1, borderColor: "#2a2a2a",
+        borderRadius: 10, marginBottom: 14,
+        paddingHorizontal: 12, height: 52,
+    },
+    inputIcon: { marginRight: 10 },
+    input:     { flex: 1, color: "#fff", fontSize: 15 },
+    eyeBtn:    { padding: 4 },
+
+    // Button
     btn: {
         backgroundColor: "#e50914",
-        height: 50,
-        borderRadius: 8,
-        justifyContent: "center",
-        alignItems: "center",
-        marginTop: 6,
-        marginBottom: 20,
+        height: 52, borderRadius: 10,
+        justifyContent: "center", alignItems: "center",
+        marginTop: 4,
     },
-    btnText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "bold",
+    btnDisabled: { opacity: 0.45 },
+    btnInner:    { flexDirection: "row", alignItems: "center", gap: 8 },
+    btnText:     { color: "#fff", fontSize: 16, fontWeight: "800" },
+
+    // Divider
+    dividerRow:  { flexDirection: "row", alignItems: "center", marginVertical: 18, gap: 12 },
+    divider:     { flex: 1, height: 1, backgroundColor: "#222" },
+    dividerText: { color: "#444", fontSize: 13 },
+
+    // Secondary button
+    secondaryBtn: {
+        height: 52, borderRadius: 10,
+        justifyContent: "center", alignItems: "center",
+        borderWidth: 1.5, borderColor: "#333",
+        backgroundColor: "transparent",
     },
-    link: {
-        color: "#b3b3b3",
-        textAlign: "center",
-        fontSize: 14,
-    },
-    linkRed: {
-        color: "#e50914",
-        fontWeight: "bold",
-    },
+    secondaryBtnText: { color: "#b3b3b3", fontSize: 15, fontWeight: "600" },
+
+    // Footer
+    footer:     { color: "#555", textAlign: "center", fontSize: 13 },
+    footerLink: { color: "#e50914", fontWeight: "700" },
 });
 
 export default LoginScreen;

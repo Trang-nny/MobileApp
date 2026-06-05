@@ -1,6 +1,6 @@
 // ── CẤU HÌNH IP ─────────────────────────────────────────────
 // ĐỔI IP NÀY THEO MÁY CỦA BẠN (ipconfig → IPv4 Address)
-export const API = "http://192.168.1.39:5555/api/v1";
+export const API = "http://192.168.1.59:5555/api/v1";
 
 // ── MOVIES ──────────────────────────────────────
 export const SET_MOVIES          = "SET_MOVIES";
