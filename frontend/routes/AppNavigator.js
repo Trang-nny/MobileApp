@@ -4,15 +4,20 @@ import { createStackNavigator }     from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons }                 from "@expo/vector-icons";
 
-import HomeScreen        from "../screens/HomeScreen";
-import MovieDetailScreen from "../screens/MovieDetailScreen";
-import FavoritesScreen   from "../screens/FavoritesScreen";
-import ProfileScreen     from "../screens/ProfileScreen";
-import LoginScreen       from "../screens/LoginScreen";
-import RegisterScreen    from "../screens/RegisterScreen";
-import HistoryScreen     from "../screens/HistoryScreen";
-import VideoPlayerScreen from "../screens/VideoPlayerScreen";
-import EditProfileScreen from "../screens/EditProfileScreen";
+import HomeScreen             from "../screens/HomeScreen";
+import MovieDetailScreen      from "../screens/MovieDetailScreen";
+import FavoritesScreen        from "../screens/FavoritesScreen";
+import ProfileScreen          from "../screens/ProfileScreen";
+import LoginScreen            from "../screens/LoginScreen";
+import RegisterScreen         from "../screens/RegisterScreen";
+import HistoryScreen          from "../screens/HistoryScreen";
+import VideoPlayerScreen      from "../screens/VideoPlayerScreen";
+import EditProfileScreen      from "../screens/EditProfileScreen";
+
+import AdminDashboardScreen   from "../screens/AdminDashboardScreen";
+import AdminMoviesScreen      from "../screens/AdminMoviesScreen";
+import AdminGenresScreen      from "../screens/AdminGenresScreen";
+import AdminUsersScreen       from "../screens/AdminUsersScreen";
 
 const Tab   = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -60,43 +65,49 @@ export default function AppNavigator() {
                     cardStyle:        { backgroundColor: "#0a0a0a" },
                 }}
             >
+                {/* ── Tab chính ── */}
                 <Stack.Screen
                     name="MainTabs"
                     component={MainTabs}
                     options={{ headerShown: false }}
                 />
+
+                {/* ── Chi tiết phim ── */}
                 <Stack.Screen
                     name="MovieDetail"
                     component={MovieDetailScreen}
                     options={{ title: "Chi Tiết Phim" }}
                 />
 
-                {/* Auth — ẨN header mặc định, dùng giao diện tự thiết kế */}
-                <Stack.Screen
-                    name="Login"
-                    component={LoginScreen}
-                    options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                    name="Register"
-                    component={RegisterScreen}
-                    options={{ headerShown: false }}
-                />
+                {/* ── Auth ── */}
+                <Stack.Screen name="Login"    component={LoginScreen}    options={{ headerShown: false }} />
+                <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
 
+                {/* ── Người dùng ── */}
+                <Stack.Screen name="History"     component={HistoryScreen}     options={{ title: "Lịch Sử Xem" }} />
+                <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} options={{ title: "Đang Xem", headerShown: false }} />
+                <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: "Chỉnh Sửa Hồ Sơ" }} />
+
+                {/* ── Admin ── */}
                 <Stack.Screen
-                    name="History"
-                    component={HistoryScreen}
-                    options={{ title: "Lịch Sử Xem" }}
+                    name="AdminDashboard"
+                    component={AdminDashboardScreen}
+                    options={{ title: "Bảng Điều Khiển Admin" }}
                 />
                 <Stack.Screen
-                    name="VideoPlayer"
-                    component={VideoPlayerScreen}
-                    options={{ title: "Đang Xem", headerShown: false }}
+                    name="AdminMovies"
+                    component={AdminMoviesScreen}
+                    options={{ title: "Quản Lý Phim" }}
                 />
                 <Stack.Screen
-                    name="EditProfile"
-                    component={EditProfileScreen}
-                    options={{ title: "Chỉnh Sửa Hồ Sơ" }}
+                    name="AdminGenres"
+                    component={AdminGenresScreen}
+                    options={{ title: "Quản Lý Thể Loại" }}
+                />
+                <Stack.Screen
+                    name="AdminUsers"
+                    component={AdminUsersScreen}
+                    options={{ title: "Quản Lý Người Dùng" }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

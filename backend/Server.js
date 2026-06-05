@@ -22,6 +22,8 @@ con.connect(err => {
     if (err) console.log("Lỗi kết nối: " + err.message);
     else {
         console.log("Connected MySQL MovieApp DB!!!");
+
+        // Thêm UNIQUE KEY lịch sử xem
         con.query(
             `ALTER TABLE watch_history ADD UNIQUE KEY uq_user_movie (user_id, movie_id)`,
             err => {
@@ -31,6 +33,17 @@ con.connect(err => {
                     console.log("watch_history UNIQUE key OK");
             }
         );
+
+        // Thêm cột role cho bảng users (nếu chưa có)
+        con.query(
+            `ALTER TABLE users ADD COLUMN role ENUM('user','admin') NOT NULL DEFAULT 'user'`,
+            err => {
+                if (err && err.code !== "ER_DUP_FIELDNAME")
+                    console.log("users.role column:", err.message);
+                else
+                    console.log("users.role column OK");
+            }
+        );
     }
 });
 
@@ -38,6 +51,7 @@ function hashPassword(password) {
     return crypto.createHash("sha256").update(password).digest("hex");
 }
 
+// Middleware xác thực token (user thường)
 function authMiddleware(req, res, next) {
     var token = req.headers["authorization"]
         ? req.headers["authorization"].split(" ")[1]
@@ -45,6 +59,23 @@ function authMiddleware(req, res, next) {
     if (!token) return res.status(401).send({ message: "Chưa đăng nhập" });
     try {
         req.user = jwt.verify(token, JWT_SECRET);
+        next();
+    } catch (e) {
+        res.status(403).send({ message: "Token không hợp lệ" });
+    }
+}
+
+// Middleware xác thực Admin
+function adminMiddleware(req, res, next) {
+    var token = req.headers["authorization"]
+        ? req.headers["authorization"].split(" ")[1]
+        : null;
+    if (!token) return res.status(401).send({ message: "Chưa đăng nhập" });
+    try {
+        var decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded.role !== "admin")
+            return res.status(403).send({ message: "Bạn không có quyền Admin" });
+        req.user = decoded;
         next();
     } catch (e) {
         res.status(403).send({ message: "Token không hợp lệ" });
@@ -95,21 +126,22 @@ app.post("/api/v1/auth/login", (req, res) => {
         if (!isMatch)
             return res.status(401).send({ message: "Email hoặc mật khẩu không đúng" });
 
+        // Đưa role vào token để adminMiddleware kiểm tra được
         var token = jwt.sign(
-            { id: user.id, email: user.email },
+            { id: user.id, email: user.email, role: user.role },
             JWT_SECRET,
             { expiresIn: "7d" }
         );
         res.status(200).send({
             message: "Đăng nhập thành công",
             token,
-            user: { id: user.id, full_name: user.full_name, email: user.email, avatar: user.avatar }
+            user: { id: user.id, full_name: user.full_name, email: user.email, avatar: user.avatar, role: user.role }
         });
     });
 });
 
 app.get("/api/v1/auth/profile", authMiddleware, (req, res) => {
-    var sql = "SELECT id, full_name, email, avatar, created_at FROM users WHERE id = ?";
+    var sql = "SELECT id, full_name, email, avatar, role, created_at FROM users WHERE id = ?";
     con.query(sql, [req.user.id], (err, results) => {
         if (err) return res.status(500).send(err);
         if (results.length === 0) return res.status(404).send({ message: "Không tìm thấy người dùng" });
@@ -151,7 +183,7 @@ app.put("/api/v1/auth/profile", authMiddleware, (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════
-// MOVIES
+// MOVIES (public)
 // ══════════════════════════════════════════════════════════
 
 app.get("/api/v1/movies/popular", (req, res) => {
@@ -224,7 +256,7 @@ app.get("/api/v1/movies/:id", (req, res) => {
         if (results.length === 0) return res.status(404).send({ message: "Không tìm thấy phim" });
 
         var movie = results[0];
-        var genreSql = `SELECT g.name FROM movie_genres mg
+        var genreSql = `SELECT g.id, g.name FROM movie_genres mg
                         JOIN genres g ON mg.genre_id = g.id
                         WHERE mg.movie_id = ?`;
         con.query(genreSql, [movie.id], (err, genreRows) => {
@@ -236,7 +268,7 @@ app.get("/api/v1/movies/:id", (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════
-// GENRES
+// GENRES (public)
 // ══════════════════════════════════════════════════════════
 
 app.get("/api/v1/genres", (req, res) => {
@@ -287,11 +319,9 @@ app.delete("/api/v1/favorites/:movieId", authMiddleware, (req, res) => {
 
 // ══════════════════════════════════════════════════════════
 // WATCH HISTORY
-// FIX: dùng alias m.id AS id để tránh bị cột wh.id ghi đè
 // ══════════════════════════════════════════════════════════
 
 app.get("/api/v1/history", authMiddleware, (req, res) => {
-    // FIX: SELECT m.id AS id rõ ràng + wh.movie_id để client luôn có đúng id
     var sql = `SELECT m.id AS id, wh.movie_id, m.title, m.description, m.year, m.rating,
                       m.poster_url, m.trailer_url, m.director, m.cast_list,
                       m.view_count, m.created_at,
@@ -337,6 +367,153 @@ app.delete("/api/v1/history/:movieId", authMiddleware, (req, res) => {
     con.query(sql, [req.user.id, req.params.movieId], (err) => {
         if (err) return res.status(500).send(err);
         res.status(200).send({ message: "Đã xoá khỏi lịch sử" });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+// ADMIN – QUẢN LÝ NGƯỜI DÙNG
+// ══════════════════════════════════════════════════════════
+
+// Lấy danh sách tất cả người dùng
+app.get("/api/v1/admin/users", adminMiddleware, (req, res) => {
+    var sql = "SELECT id, full_name, email, avatar, role, created_at FROM users ORDER BY created_at DESC";
+    con.query(sql, (err, results) => {
+        if (err) return res.status(500).send(err);
+        res.status(200).send(results);
+    });
+});
+
+// Xóa người dùng (không cho xóa chính mình)
+app.delete("/api/v1/admin/users/:id", adminMiddleware, (req, res) => {
+    var userId = parseInt(req.params.id);
+    if (userId === req.user.id)
+        return res.status(400).send({ message: "Không thể xóa tài khoản Admin đang đăng nhập" });
+
+    var sql = "DELETE FROM users WHERE id = ?";
+    con.query(sql, [userId], (err, result) => {
+        if (err) return res.status(500).send(err);
+        if (result.affectedRows === 0) return res.status(404).send({ message: "Không tìm thấy người dùng" });
+        res.status(200).send({ message: "Đã xóa người dùng" });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+// ADMIN – QUẢN LÝ PHIM
+// ══════════════════════════════════════════════════════════
+
+// Thêm phim mới
+app.post("/api/v1/admin/movies", adminMiddleware, (req, res) => {
+    var { title, description, year, rating, poster_url, trailer_url, director, cast_list, video_url, genre_ids } = req.body;
+
+    if (!title || !year)
+        return res.status(400).send({ message: "Tiêu đề và năm phát hành là bắt buộc" });
+
+    var sql = `INSERT INTO movies (title, description, year, rating, poster_url, trailer_url, director, cast_list, video_url, view_count)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`;
+    con.query(sql, [title, description, year, rating || 0, poster_url, trailer_url, director, cast_list, video_url], (err, result) => {
+        if (err) return res.status(500).send(err);
+
+        var movieId = result.insertId;
+
+        // Gán thể loại nếu có
+        if (genre_ids && genre_ids.length > 0) {
+            var genreValues = genre_ids.map(gid => [movieId, gid]);
+            con.query("INSERT INTO movie_genres (movie_id, genre_id) VALUES ?", [genreValues], (err) => {
+                if (err) return res.status(500).send(err);
+                res.status(201).send({ message: "Đã thêm phim mới", movieId });
+            });
+        } else {
+            res.status(201).send({ message: "Đã thêm phim mới", movieId });
+        }
+    });
+});
+
+// Cập nhật thông tin phim
+app.put("/api/v1/admin/movies/:id", adminMiddleware, (req, res) => {
+    var { title, description, year, rating, poster_url, trailer_url, director, cast_list, video_url, genre_ids } = req.body;
+    var movieId = req.params.id;
+
+    var sql = `UPDATE movies SET title=?, description=?, year=?, rating=?, poster_url=?,
+               trailer_url=?, director=?, cast_list=?, video_url=? WHERE id=?`;
+    con.query(sql, [title, description, year, rating, poster_url, trailer_url, director, cast_list, video_url, movieId], (err, result) => {
+        if (err) return res.status(500).send(err);
+        if (result.affectedRows === 0) return res.status(404).send({ message: "Không tìm thấy phim" });
+
+        // Cập nhật lại thể loại: xóa cũ rồi thêm mới
+        con.query("DELETE FROM movie_genres WHERE movie_id = ?", [movieId], (err) => {
+            if (err) return res.status(500).send(err);
+
+            if (genre_ids && genre_ids.length > 0) {
+                var genreValues = genre_ids.map(gid => [movieId, gid]);
+                con.query("INSERT INTO movie_genres (movie_id, genre_id) VALUES ?", [genreValues], (err) => {
+                    if (err) return res.status(500).send(err);
+                    res.status(200).send({ message: "Đã cập nhật phim" });
+                });
+            } else {
+                res.status(200).send({ message: "Đã cập nhật phim" });
+            }
+        });
+    });
+});
+
+// Xóa phim
+app.delete("/api/v1/admin/movies/:id", adminMiddleware, (req, res) => {
+    var movieId = req.params.id;
+
+    // Xóa dữ liệu liên quan trước khi xóa phim
+    con.query("DELETE FROM movie_genres WHERE movie_id = ?", [movieId], (err) => {
+        if (err) return res.status(500).send(err);
+        con.query("DELETE FROM favorites WHERE movie_id = ?", [movieId], (err) => {
+            if (err) return res.status(500).send(err);
+            con.query("DELETE FROM watch_history WHERE movie_id = ?", [movieId], (err) => {
+                if (err) return res.status(500).send(err);
+                con.query("DELETE FROM movies WHERE id = ?", [movieId], (err, result) => {
+                    if (err) return res.status(500).send(err);
+                    if (result.affectedRows === 0) return res.status(404).send({ message: "Không tìm thấy phim" });
+                    res.status(200).send({ message: "Đã xóa phim" });
+                });
+            });
+        });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+// ADMIN – QUẢN LÝ THỂ LOẠI
+// ══════════════════════════════════════════════════════════
+
+// Thêm thể loại mới
+app.post("/api/v1/admin/genres", adminMiddleware, (req, res) => {
+    var { name } = req.body;
+    if (!name) return res.status(400).send({ message: "Tên thể loại là bắt buộc" });
+
+    con.query("INSERT INTO genres (name) VALUES (?)", [name], (err, result) => {
+        if (err) return res.status(500).send(err);
+        res.status(201).send({ message: "Đã thêm thể loại", id: result.insertId, name });
+    });
+});
+
+// Cập nhật thể loại
+app.put("/api/v1/admin/genres/:id", adminMiddleware, (req, res) => {
+    var { name } = req.body;
+    if (!name) return res.status(400).send({ message: "Tên thể loại là bắt buộc" });
+
+    con.query("UPDATE genres SET name = ? WHERE id = ?", [name, req.params.id], (err, result) => {
+        if (err) return res.status(500).send(err);
+        if (result.affectedRows === 0) return res.status(404).send({ message: "Không tìm thấy thể loại" });
+        res.status(200).send({ message: "Đã cập nhật thể loại" });
+    });
+});
+
+// Xóa thể loại
+app.delete("/api/v1/admin/genres/:id", adminMiddleware, (req, res) => {
+    // Xóa liên kết phim-thể loại trước
+    con.query("DELETE FROM movie_genres WHERE genre_id = ?", [req.params.id], (err) => {
+        if (err) return res.status(500).send(err);
+        con.query("DELETE FROM genres WHERE id = ?", [req.params.id], (err, result) => {
+            if (err) return res.status(500).send(err);
+            if (result.affectedRows === 0) return res.status(404).send({ message: "Không tìm thấy thể loại" });
+            res.status(200).send({ message: "Đã xóa thể loại" });
+        });
     });
 });
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
     View, Text, FlatList, StyleSheet,
     TouchableOpacity, ScrollView, Image,
@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Ionicons }                from "@expo/vector-icons";
 import { fetchPopularMovies, fetchMovies, addFavorite, removeFavorite } from "../redux/actions";
 import { API }                     from "../redux/actions";
-import SearchBar                   from "../components/SearchBar";
+import { useFocusEffect }             from "@react-navigation/native";
 import LoadingSpinner              from "../components/LoadingSpinner";
 
 const ASSETS_MAP = {
@@ -163,7 +163,7 @@ const banner = StyleSheet.create({
     dotActive: { backgroundColor: "#e50914", width: 18 },
 });
 
-// ── PosterItem (poster nhỏ hàng ngang) ───────────────────────────────────────
+//PosterItem (poster nhỏ hàng ngang)
 const POSTER_ITEM_W = 120;
 const POSTER_ITEM_H = 175;
 
@@ -199,7 +199,7 @@ const poster = StyleSheet.create({
     year:      { color: "#777", fontSize: 11, marginTop: 2 },
 });
 
-// ── HomeScreen ────────────────────────────────────────────────────────────────
+// HomeScreen
 const HomeScreen = ({ navigation }) => {
     const { width, height } = useWindowDimensions();
     const BANNER_HEIGHT = height * 0.55;
@@ -217,14 +217,17 @@ const HomeScreen = ({ navigation }) => {
     const [activeGenre, setActiveGenre] = useState({ label: "Tất cả", id: "" });
     const [genres,      setGenres]      = useState([]);
 
-    useEffect(() => {
-        fetch(`${API}/genres`)
-            .then(r => r.json())
-            .then(data => { if (Array.isArray(data)) setGenres(data); })
-            .catch(() => {});
-    }, []);
-
-    useEffect(() => { dispatch(fetchPopularMovies()); }, []);
+    // Reload phim + thể loại mỗi khi màn hình được focus lại
+    // (ví dụ: admin vừa thêm/xóa phim rồi quay về Home)
+    useFocusEffect(
+        useCallback(() => {
+            dispatch(fetchPopularMovies());
+            fetch(`${API}/genres`)
+                .then(r => r.json())
+                .then(data => { if (Array.isArray(data)) setGenres(data); })
+                .catch(() => {});
+        }, [])
+    );
 
     useEffect(() => {
         const params = {};

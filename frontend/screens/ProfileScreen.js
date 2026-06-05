@@ -9,6 +9,7 @@ import { logout }         from "../redux/actions";
 const ProfileScreen = ({ navigation }) => {
     const dispatch = useDispatch();
     const user     = useSelector(s => s.user);
+    const isAdmin  = user?.role === "admin";
 
     if (!user) {
         return (
@@ -46,7 +47,7 @@ const ProfileScreen = ({ navigation }) => {
                 {/* ── Cover + Avatar ── */}
                 <View style={styles.coverWrap}>
                     <LinearGradient
-                        colors={["#e50914", "#7a0000"]}
+                        colors={isAdmin ? ["#7a0000", "#e50914"] : ["#e50914", "#7a0000"]}
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                         style={StyleSheet.absoluteFillObject}
                     />
@@ -61,13 +62,56 @@ const ProfileScreen = ({ navigation }) => {
                     </View>
                 </View>
 
-                {/* ── Tên + Email ── */}
+                {/* ── Tên + Email + Badge Admin ── */}
                 <View style={styles.userInfo}>
-                    <Text style={styles.name}>{user.full_name}</Text>
+                    <View style={styles.nameRow}>
+                        <Text style={styles.name}>{user.full_name}</Text>
+                        {isAdmin && (
+                            <View style={styles.adminBadge}>
+                                <Ionicons name="shield-checkmark" size={13} color="#e50914" />
+                                <Text style={styles.adminBadgeText}>ADMIN</Text>
+                            </View>
+                        )}
+                    </View>
                     <Text style={styles.email}>{user.email}</Text>
                 </View>
 
-                {/* ── Menu ── */}
+                {/* ── Menu Quản trị (chỉ hiện với Admin) ── */}
+                {isAdmin && (
+                    <View style={styles.menuSection}>
+                        <Text style={styles.menuSectionTitle}>Quản trị hệ thống</Text>
+                        <MenuItem
+                            icon="shield-checkmark"
+                            label="Bảng điều khiển Admin"
+                            desc="Tổng quan thống kê hệ thống"
+                            iconColor="#e50914"
+                            onPress={() => navigation.navigate("AdminDashboard")}
+                        />
+                        <MenuItem
+                            icon="film"
+                            label="Quản lý Phim"
+                            desc="Thêm, sửa, xóa phim"
+                            iconColor="#e50914"
+                            onPress={() => navigation.navigate("AdminMovies")}
+                        />
+                        <MenuItem
+                            icon="pricetags"
+                            label="Quản lý Thể loại"
+                            desc="Thêm, sửa, xóa thể loại"
+                            iconColor="#10b981"
+                            onPress={() => navigation.navigate("AdminGenres")}
+                        />
+                        <MenuItem
+                            icon="people"
+                            label="Quản lý Người dùng"
+                            desc="Xem và xóa tài khoản"
+                            iconColor="#3b82f6"
+                            onPress={() => navigation.navigate("AdminUsers")}
+                        />
+                    </View>
+                )}
+
+                {/* ── Menu Tài khoản thường ── */}
                 <View style={styles.menuSection}>
                     <Text style={styles.menuSectionTitle}>Tài khoản</Text>
                     <MenuItem
@@ -102,10 +146,10 @@ const ProfileScreen = ({ navigation }) => {
     );
 };
 
-const MenuItem = ({ icon, label, desc, onPress }) => (
+const MenuItem = ({ icon, label, desc, onPress, iconColor = "#e50914" }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-        <View style={styles.menuIconWrap}>
-            <Ionicons name={icon} size={20} color="#e50914" />
+        <View style={[styles.menuIconWrap, { backgroundColor: iconColor + "1a" }]}>
+            <Ionicons name={icon} size={20} color={iconColor} />
         </View>
         <View style={styles.menuTextWrap}>
             <Text style={styles.menuLabel}>{label}</Text>
@@ -131,15 +175,21 @@ const styles = StyleSheet.create({
     avatarImg:       { width: "100%", height: "100%", borderRadius: 40 },
     avatarFallback:  { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", backgroundColor: "#1c1c1c" },
     avatarText:      { color: "#e50914", fontSize: 26, fontWeight: "900" },
-    
-    userInfo:        { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 28 },
+
+    userInfo:        { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 24 },
+    nameRow:         { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
     name:            { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.3 },
+    adminBadge:      { flexDirection: "row", alignItems: "center", gap: 4,
+                       backgroundColor: "#e509141a", borderRadius: 20,
+                       paddingHorizontal: 10, paddingVertical: 4,
+                       borderWidth: 1, borderColor: "#e5091433" },
+    adminBadgeText:  { color: "#e50914", fontSize: 10, fontWeight: "800", letterSpacing: 1 },
     email:           { color: "#777", fontSize: 13, marginTop: 4 },
 
     menuSection:     { marginHorizontal: 16, marginBottom: 20 },
     menuSectionTitle:{ color: "#555", fontSize: 11, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10, marginLeft: 4 },
     menuItem:        { flexDirection: "row", alignItems: "center", backgroundColor: "#141414", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 8, gap: 12, borderWidth: 1, borderColor: "#1e1e1e" },
-    menuIconWrap:    { width: 36, height: 36, borderRadius: 10, backgroundColor: "#1c1c1c", justifyContent: "center", alignItems: "center" },
+    menuIconWrap:    { width: 36, height: 36, borderRadius: 10, justifyContent: "center", alignItems: "center" },
     menuTextWrap:    { flex: 1 },
     menuLabel:       { color: "#fff", fontSize: 15, fontWeight: "600" },
     menuDesc:        { color: "#555", fontSize: 12, marginTop: 2 },
