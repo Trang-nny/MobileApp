@@ -4,6 +4,7 @@ import {
     StyleSheet, KeyboardAvoidingView, Platform,
     ScrollView, StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
 import { login } from "../redux/actions";
@@ -16,6 +17,7 @@ const LoginScreen = ({ navigation }) => {
     const authLoading = useSelector(s => s.authLoading);
     const authError   = useSelector(s => s.authError);
     const token       = useSelector(s => s.token);
+    const insets      = useSafeAreaInsets();
 
     useEffect(() => {
         if (token) {
@@ -34,7 +36,10 @@ const LoginScreen = ({ navigation }) => {
         <>
             <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
             {canGoBack && (
-                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                <TouchableOpacity
+                    style={[styles.backBtn, { top: insets.top + 8 }]}
+                    onPress={() => navigation.goBack()}
+                >
                     <Ionicons name="chevron-back" size={24} color="#fff" />
                 </TouchableOpacity>
             )}
@@ -43,7 +48,10 @@ const LoginScreen = ({ navigation }) => {
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
                 <ScrollView
-                    contentContainerStyle={[styles.scroll, canGoBack && { paddingTop: 60 }]}
+                    contentContainerStyle={[
+                        styles.scroll,
+                        canGoBack && { paddingTop: insets.top + 56 },
+                    ]}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
@@ -160,7 +168,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     root:   { flex: 1, backgroundColor: "#0a0a0a" },
     backBtn: {
-        position: "absolute", top: 44, left: 16, zIndex: 10,
+        position: "absolute", left: 16, zIndex: 10,
         backgroundColor: "rgba(255,255,255,0.08)",
         borderRadius: 20, padding: 8,
         borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",

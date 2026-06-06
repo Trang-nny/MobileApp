@@ -53,7 +53,6 @@ const MovieFormModal = ({ visible, movie, genres, token, onClose, onSaved }) => 
             setTrailerUrl(movie.trailer_url || "");
             setDirector(movie.director || "");
             setCastList(movie.cast_list || "");
-            // Nếu movie có genres (tên), khớp với id
             if (movie.genres && genres.length > 0) {
                 const ids = genres
                     .filter(g => movie.genres.includes(g.name))
@@ -180,7 +179,7 @@ export default function AdminMoviesScreen() {
     const [search,  setSearch]  = useState("");
 
     const [formVisible,    setFormVisible]    = useState(false);
-    const [editingMovie,   setEditingMovie]   = useState(null); // null = thêm mới
+    const [editingMovie,   setEditingMovie]   = useState(null);
 
     useEffect(() => { loadData(); }, []);
 
@@ -193,7 +192,6 @@ export default function AdminMoviesScreen() {
             ]);
             setMovies(await mRes.json());
             setGenres(await gRes.json());
-            // Cập nhật redux để HomeScreen tự refresh
             dispatch(fetchPopularMovies());
             dispatch(fetchMovies());
         } catch (e) {
@@ -236,38 +234,38 @@ export default function AdminMoviesScreen() {
     const renderMovie = ({ item }) => {
         const imgSrc = resolveImg(item);
         return (
-        <View style={styles.row}>
-            {imgSrc ? (
-                <Image
-                    source={imgSrc}
-                    style={styles.poster}
-                    onError={() => {}}
-                />
-            ) : (
-                <View style={[styles.poster, styles.posterFallback]}>
-                    <Ionicons name="film-outline" size={20} color="#333" />
+            <View style={styles.row}>
+                {imgSrc ? (
+                    <Image
+                        source={imgSrc}
+                        style={styles.poster}
+                        onError={() => {}}
+                    />
+                ) : (
+                    <View style={[styles.poster, styles.posterFallback]}>
+                        <Ionicons name="film-outline" size={20} color="#333" />
+                    </View>
+                )}
+                <View style={styles.info}>
+                    <Text style={styles.movieTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={styles.movieMeta}>{item.year}  ·  ⭐ {item.rating}</Text>
+                    <Text style={styles.movieGenres} numberOfLines={1}>
+                        {Array.isArray(item.genres) ? item.genres.join(", ") : ""}
+                    </Text>
                 </View>
-            )}
-            <View style={styles.info}>
-                <Text style={styles.movieTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.movieMeta}>{item.year}  ·  ⭐ {item.rating}</Text>
-                <Text style={styles.movieGenres} numberOfLines={1}>
-                    {Array.isArray(item.genres) ? item.genres.join(", ") : ""}
-                </Text>
+                <View style={styles.actions}>
+                    <TouchableOpacity
+                        style={styles.editBtn}
+                        onPress={() => { setEditingMovie(item); setFormVisible(true); }}
+                    >
+                        <Ionicons name="create-outline" size={18} color="#3b82f6" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
+                        <Ionicons name="trash-outline" size={18} color="#e50914" />
+                    </TouchableOpacity>
+                </View>
             </View>
-            <View style={styles.actions}>
-                <TouchableOpacity
-                    style={styles.editBtn}
-                    onPress={() => { setEditingMovie(item); setFormVisible(true); }}
-                >
-                    <Ionicons name="create-outline" size={18} color="#3b82f6" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
-                    <Ionicons name="trash-outline" size={18} color="#e50914" />
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
+        );
     };
 
     return (
@@ -324,13 +322,15 @@ const styles = StyleSheet.create({
     container:    { flex: 1, backgroundColor: "#0a0a0a" },
     topBar:       { flexDirection: "row", alignItems: "center", gap: 10,
                     paddingHorizontal: 16, paddingVertical: 12 },
+    
     searchWrap:   { flex: 1, flexDirection: "row", alignItems: "center", gap: 8,
                     backgroundColor: "#141414", borderRadius: 10,
-                    paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: "#1e1e1e" },
-    searchInput:  { flex: 1, color: "#fff", fontSize: 14 },
-    addBtn:       { flexDirection: "row", alignItems: "center", gap: 4,
+                    paddingHorizontal: 12, height: 42, borderWidth: 1, borderColor: "#1e1e1e" },
+    searchInput:  { flex: 1, color: "#fff", fontSize: 14, height: "100%", paddingVertical: 0 },
+    addBtn:       { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4,
                     backgroundColor: "#e50914", borderRadius: 10,
-                    paddingHorizontal: 14, paddingVertical: 10 },
+                    paddingHorizontal: 14, height: 42 },
+
     addBtnText:   { color: "#fff", fontWeight: "700", fontSize: 14 },
 
     row:          { flexDirection: "row", alignItems: "center", backgroundColor: "#141414",

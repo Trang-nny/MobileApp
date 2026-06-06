@@ -3,6 +3,7 @@ import {
     View, Text, FlatList, StyleSheet,
     TouchableOpacity, Alert, Image
 } from "react-native";
+// Giữ nguyên import để không lỗi các phần giao diện Chưa đăng nhập / Chưa có lịch sử
 import { SafeAreaView }       from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { Ionicons }            from "@expo/vector-icons";
@@ -168,7 +169,8 @@ const HistoryScreen = ({ navigation }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        // ĐÃ SỬA: Thay đổi từ SafeAreaView thành View thông thường giống như màn hình mẫu Edit để loại bỏ khoảng trống thừa phía trên
+        <View style={styles.container}>
             <Text style={styles.heading}>Lịch sử xem ({history.length})</Text>
             <FlatList
                 data={history}
@@ -186,14 +188,24 @@ const HistoryScreen = ({ navigation }) => {
                     />
                 )}
             />
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container:    { flex: 1, backgroundColor: "#0a0a0a" },
     center:       { flex: 1, backgroundColor: "#0a0a0a", justifyContent: "center", alignItems: "center", padding: 32 },
-    heading:      { color: "#fff", fontSize: 18, fontWeight: "bold", padding: 16, paddingBottom: 8 },
+    
+    // ĐÃ SỬA: Điều chỉnh lại khoảng cách đệm (Padding) để chữ "Lịch sử xem" nằm sát gọn gàng ngay dưới Header hệ thống
+    heading:      { 
+        color: "#fff", 
+        fontSize: 18, 
+        fontWeight: "bold", 
+        paddingHorizontal: 16, 
+        paddingTop: 12, 
+        paddingBottom: 10 
+    },
+    
     list:         { paddingHorizontal: 16, paddingBottom: 24 },
     emptyTitle:   { color: "#fff", fontSize: 18, fontWeight: "bold", marginTop: 16 },
     emptyText:    { color: "#6e6e6e", fontSize: 14, textAlign: "center", marginTop: 8 },

@@ -1,8 +1,8 @@
-// ── CẤU HÌNH IP ─────────────────────────────────────────────
+// ── CẤU HÌNH IP ──
 // ĐỔI IP NÀY THEO MÁY CỦA BẠN (ipconfig → IPv4 Address)
 export const API = "http://192.168.1.59:5555/api/v1";
 
-// ── MOVIES ──────────────────────────────────────
+// ── MOVIES ──
 export const SET_MOVIES          = "SET_MOVIES";
 export const SET_POPULAR_MOVIES  = "SET_POPULAR_MOVIES";
 export const SET_SELECTED_MOVIE  = "SET_SELECTED_MOVIE";
@@ -15,7 +15,6 @@ export const fetchPopularMovies = () => async (dispatch) => {
         const res  = await fetch(`${API}/movies/popular`);
         const data = await res.json();
         dispatch({ type: SET_POPULAR_MOVIES, payload: data });
-        dispatch({ type: SET_MOVIES,         payload: data });
     } catch (err) {
         dispatch({ type: SET_MOVIES_ERROR, payload: err.message });
     } finally {
@@ -47,7 +46,7 @@ export const fetchMovieById = (id) => async (dispatch) => {
     }
 };
 
-// ── AUTH ─────────────────────────────────────────
+// ── AUTH ───
 export const SET_USER         = "SET_USER";
 export const SET_TOKEN        = "SET_TOKEN";
 export const SET_AUTH_LOADING = "SET_AUTH_LOADING";
@@ -117,10 +116,11 @@ export const updateProfile = (profileData, token) => async (dispatch) => {
     }
 };
 
-// ── FAVORITES ────────────────────────────────────
+// ── FAVORITES ──
 export const SET_FAVORITES         = "SET_FAVORITES";
-export const SET_FAVORITE_MOVIES   = "SET_FAVORITE_MOVIES";   // FIX: lưu riêng danh sách phim yêu thích đầy đủ
+export const SET_FAVORITE_MOVIES   = "SET_FAVORITE_MOVIES";
 export const ADD_FAVORITE          = "ADD_FAVORITE";
+export const ADD_FAVORITE_MOVIE    = "ADD_FAVORITE_MOVIE";
 export const REMOVE_FAVORITE       = "REMOVE_FAVORITE";
 export const SET_FAVORITES_LOADING = "SET_FAVORITES_LOADING";
 
@@ -131,7 +131,6 @@ export const fetchFavorites = (token) => async (dispatch) => {
             headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        // FIX: lưu cả mảng id LẪN mảng phim đầy đủ để FavoritesScreen hiển thị đúng
         dispatch({ type: SET_FAVORITES,       payload: data });
         dispatch({ type: SET_FAVORITE_MOVIES, payload: data });
     } catch (err) {
@@ -147,7 +146,14 @@ export const addFavorite = (movieId, token) => async (dispatch) => {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body:    JSON.stringify({ movie_id: movieId }),
         });
-        if (res.ok) dispatch({ type: ADD_FAVORITE, payload: movieId });
+        if (res.ok) {
+            dispatch({ type: ADD_FAVORITE, payload: movieId });
+            try {
+                const movieRes  = await fetch(`${API}/movies/${movieId}`);
+                const movieData = await movieRes.json();
+                if (movieRes.ok) dispatch({ type: ADD_FAVORITE_MOVIE, payload: movieData });
+            } catch (_) {}
+        }
     } catch (err) {}
 };
 
@@ -161,7 +167,7 @@ export const removeFavorite = (movieId, token) => async (dispatch) => {
     } catch (err) {}
 };
 
-// ── WATCH HISTORY ────────────────────────────────
+// ── WATCH HISTORY ──
 export const SET_HISTORY         = "SET_HISTORY";
 export const REMOVE_HISTORY      = "REMOVE_HISTORY";
 export const SET_HISTORY_LOADING = "SET_HISTORY_LOADING";

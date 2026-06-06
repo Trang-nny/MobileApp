@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ActivityIndicator, Dimensions, Linking
+    ActivityIndicator, Dimensions, Linking, StatusBar
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector, useDispatch } from "react-redux";
 import { Ionicons }                 from "@expo/vector-icons";
 import { WebView }                  from "react-native-webview";
@@ -43,10 +44,12 @@ const VideoPlayerScreen = ({ route, navigation }) => {
     const [elapsed, setElapsed] = useState(startAt);
     const timerRef  = useRef(null);
     const savedRef  = useRef(startAt);
+    const insets    = useSafeAreaInsets();
 
     const youtubeId = getYoutubeId(movie.trailer_url);
 
     useEffect(() => {
+        // Tắt Header mặc định của Navigation để tự custom header phía dưới
         navigation.setOptions({ headerShown: false });
 
         // Đếm giây đã xem để lưu progress
@@ -95,6 +98,15 @@ const VideoPlayerScreen = ({ route, navigation }) => {
 
     return (
         <View style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
+
+            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                    <Ionicons name="chevron-back" size={24} color="#fff" />
+                    <Text style={styles.backText}>Quay lại</Text>
+                </TouchableOpacity>
+            </View>
+
             {/* Video area */}
             <View style={styles.videoArea}>
                 {embedHtml ? (
@@ -129,12 +141,6 @@ const VideoPlayerScreen = ({ route, navigation }) => {
                         </TouchableOpacity>
                     </View>
                 )}
-
-                {/* Nút back — luôn hiển thị rõ góc trái */}
-                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="chevron-back" size={24} color="#fff" />
-                    <Text style={styles.backText}>Quay lại</Text>
-                </TouchableOpacity>
             </View>
 
             {/* Thông tin phim */}
@@ -162,16 +168,28 @@ const VideoPlayerScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
     container:    { flex: 1, backgroundColor: "#0a0a0a" },
+    
+    header:       { 
+        flexDirection: "row", 
+        alignItems: "center", 
+        paddingHorizontal: 12, 
+        paddingBottom: 10,
+        backgroundColor: "#0a0a0a",
+        borderBottomWidth: 1,
+        borderBottomColor: "#1a1a1a",
+    },
+    
     videoArea:    { width: SCREEN_WIDTH, height: SCREEN_WIDTH * (9 / 16), backgroundColor: "#000" },
     webview:      { flex: 1, backgroundColor: "#000" },
     loaderOverlay:{ ...StyleSheet.absoluteFillObject, backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
+    
     backBtn:      {
-        position: "absolute", top: 12, left: 12,
         flexDirection: "row", alignItems: "center", gap: 4,
-        backgroundColor: "rgba(0,0,0,0.7)",
+        backgroundColor: "rgba(255,255,255,0.08)",
         borderRadius: 20, paddingVertical: 6, paddingHorizontal: 10,
-        borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
+        borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
     },
+    
     backText:     { color: "#fff", fontSize: 13, fontWeight: "600" },
     placeholder:  { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
     placeholderTitle: { color: "#fff", fontSize: 18, fontWeight: "bold", marginTop: 16, textAlign: "center" },

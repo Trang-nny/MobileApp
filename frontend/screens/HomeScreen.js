@@ -1,18 +1,21 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
-    View, Text, FlatList, StyleSheet,
+    View, Text, StyleSheet,
     TouchableOpacity, ScrollView, Image,
     Animated, useWindowDimensions,
 } from "react-native";
-import { SafeAreaView }            from "react-native-safe-area-context";
-import { LinearGradient }          from "expo-linear-gradient";
-import { useDispatch, useSelector } from "react-redux";
-import { Ionicons }                from "@expo/vector-icons";
-import { fetchPopularMovies, fetchMovies, addFavorite, removeFavorite } from "../redux/actions";
-import { API }                     from "../redux/actions";
-import { useFocusEffect }             from "@react-navigation/native";
-import LoadingSpinner              from "../components/LoadingSpinner";
-import SearchBar                  from "../components/SearchBar";
+import { SafeAreaView }             from "react-native-safe-area-context";
+import { LinearGradient }           from "expo-linear-gradient";
+import { useDispatch, useSelector }  from "react-redux";
+import { Ionicons }                 from "@expo/vector-icons";
+import { useFocusEffect }           from "@react-navigation/native";
+import {
+    fetchPopularMovies, fetchMovies,
+    addFavorite, removeFavorite,
+} from "../redux/actions";
+import { API }           from "../redux/actions";
+import LoadingSpinner    from "../components/LoadingSpinner";
+import SearchBar         from "../components/SearchBar";
 
 const TMDB = "https://image.tmdb.org";
 
@@ -33,11 +36,12 @@ function resolveImg(movie) {
     return null;
 }
 
+// Banner tự động chuyển (chỉ hiện ở chế độ Home)
 const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch, width, bannerHeight }) => {
-    const [idx, setIdx]   = useState(0);
-    const fadeAnim        = useRef(new Animated.Value(1)).current;
-    const timerRef        = useRef(null);
-    const TOP5            = movies.slice(0, 5);
+    const [idx, setIdx] = useState(0);
+    const fadeAnim      = useRef(new Animated.Value(1)).current;
+    const timerRef      = useRef(null);
+    const TOP5          = movies.slice(0, 5);
 
     const goTo = (next) => {
         Animated.sequence([
@@ -77,20 +81,15 @@ const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch, width, b
 
     return (
         <View style={[banner.wrap, { width, height: bannerHeight }]}>
-            {/* Background image */}
             <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: fadeAnim }]}>
-                {imgSrc && (
-                    <Image source={imgSrc} style={banner.bg} resizeMode="cover" />
-                )}
+                {imgSrc && <Image source={imgSrc} style={banner.bg} resizeMode="cover" />}
                 <LinearGradient
                     colors={["rgba(10,10,10,0.1)", "rgba(10,10,10,0.5)", "#0a0a0a"]}
                     style={StyleSheet.absoluteFillObject}
                 />
             </Animated.View>
 
-            {/* Nội dung */}
             <Animated.View style={[banner.info, { opacity: fadeAnim }]}>
-                {/* Thể loại */}
                 <View style={banner.genreRow}>
                     {genres.slice(0, 3).map((g, i) => (
                         <View key={i} style={banner.genrePill}>
@@ -98,15 +97,12 @@ const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch, width, b
                         </View>
                     ))}
                 </View>
-
                 <Text style={banner.title} numberOfLines={2}>{movie.title}</Text>
-
                 <Text style={banner.meta}>
                     {movie.year}{"  ·  "}
                     <Text style={{ color: "#f5a623" }}>⭐ {movie.rating}</Text>
                     {movie.director ? `  ·  ${movie.director}` : ""}
                 </Text>
-
                 <View style={banner.btnRow}>
                     <TouchableOpacity
                         style={banner.watchBtn}
@@ -115,7 +111,6 @@ const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch, width, b
                         <Ionicons name="play" size={18} color="#000" />
                         <Text style={banner.watchText}>Xem ngay</Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity style={banner.favBtn} onPress={handleFav}>
                         <Ionicons
                             name={isFav ? "heart" : "heart-outline"}
@@ -126,7 +121,6 @@ const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch, width, b
                 </View>
             </Animated.View>
 
-            {/* Dots chỉ vị trí */}
             <View style={banner.dots}>
                 {TOP5.map((_, i) => (
                     <TouchableOpacity key={i} onPress={() => goTo(i)}>
@@ -156,35 +150,35 @@ const banner = StyleSheet.create({
     dotActive: { backgroundColor: "#e50914", width: 18 },
 });
 
-//PosterItem (poster nhỏ hàng ngang)
-const POSTER_ITEM_W = 120;
-const POSTER_ITEM_H = 175;
+// Poster item hàng ngang (chế độ Home)
+const POSTER_W = 120;
+const POSTER_H = 175;
 
 const PosterItem = ({ movie, onPress }) => {
     const src = resolveImg(movie);
     return (
-        <TouchableOpacity style={poster.wrap} onPress={onPress} activeOpacity={0.85}>
+        <TouchableOpacity style={ps.wrap} onPress={onPress} activeOpacity={0.85}>
             {src ? (
-                <Image source={src} style={poster.img} resizeMode="cover" />
+                <Image source={src} style={ps.img} resizeMode="cover" />
             ) : (
-                <View style={[poster.img, poster.noImg]}>
+                <View style={[ps.img, ps.noImg]}>
                     <Ionicons name="film-outline" size={28} color="#333" />
                 </View>
             )}
             {movie.rating ? (
-                <View style={poster.badge}>
-                    <Text style={poster.badgeText}>⭐ {movie.rating}</Text>
+                <View style={ps.badge}>
+                    <Text style={ps.badgeText}>⭐ {movie.rating}</Text>
                 </View>
             ) : null}
-            <Text style={poster.title} numberOfLines={1}>{movie.title}</Text>
-            <Text style={poster.year}>{movie.year}</Text>
+            <Text style={ps.title} numberOfLines={1}>{movie.title}</Text>
+            <Text style={ps.year}>{movie.year}</Text>
         </TouchableOpacity>
     );
 };
 
-const poster = StyleSheet.create({
-    wrap:      { width: POSTER_ITEM_W, marginRight: 10 },
-    img:       { width: POSTER_ITEM_W, height: POSTER_ITEM_H, borderRadius: 8, backgroundColor: "#1c1c1c" },
+const ps = StyleSheet.create({
+    wrap:      { width: POSTER_W, marginRight: 10 },
+    img:       { width: POSTER_W, height: POSTER_H, borderRadius: 8, backgroundColor: "#1c1c1c" },
     noImg:     { justifyContent: "center", alignItems: "center" },
     badge:     { position: "absolute", top: 6, right: 6, backgroundColor: "rgba(0,0,0,0.75)", paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
     badgeText: { color: "#f5a623", fontSize: 10, fontWeight: "bold" },
@@ -192,12 +186,13 @@ const poster = StyleSheet.create({
     year:      { color: "#777", fontSize: 11, marginTop: 2 },
 });
 
-// HomeScreen
+// HomeScreen chính
 const HomeScreen = ({ navigation }) => {
     const { width, height } = useWindowDimensions();
-    const BANNER_HEIGHT = height * 0.55;
-    const GRID_W = (width - 16 * 2 - 8 * 2) / 3;
-    const GRID_H = GRID_W * 1.5;
+    const BANNER_H = height * 0.55;
+    
+    const GRID_W   = (width - 32 - 16) / 3;   
+    const GRID_H   = GRID_W * 1.5;
 
     const dispatch      = useDispatch();
     const apiMovies     = useSelector(s => s.movies);
@@ -207,48 +202,64 @@ const HomeScreen = ({ navigation }) => {
     const token         = useSelector(s => s.token);
 
     const [search,      setSearch]      = useState("");
-    const [activeGenre, setActiveGenre] = useState({ label: "Tất cả", id: "" });
+    const [activeGenre, setActiveGenre] = useState(null);
     const [genres,      setGenres]      = useState([]);
+    const [mode,        setMode]        = useState("home");
 
-    // Reload phim + thể loại mỗi khi màn hình được focus lại
-    // (ví dụ: admin vừa thêm/xóa phim rồi quay về Home)
+    // Nhấn icon Trang Chủ ở tab bar → reset hoàn toàn về home
     useFocusEffect(
         useCallback(() => {
             dispatch(fetchPopularMovies());
+            dispatch(fetchMovies({}));
             fetch(`${API}/genres`)
                 .then(r => r.json())
                 .then(data => { if (Array.isArray(data)) setGenres(data); })
                 .catch(() => {});
+
+            setMode("home");
+            setSearch("");
+            setActiveGenre(null);
         }, [])
     );
 
+    // Khi đang ở màn hình Home (đã focus) mà nhấn tab bar lần nữa → cũng reset về home
     useEffect(() => {
+        const unsubscribe = navigation.addListener("tabPress", () => {
+            setMode("home");
+            setSearch("");
+            setActiveGenre(null);
+        });
+        return unsubscribe;
+    }, [navigation]);
+
+    // Fetch phim theo filter (chỉ trong chế độ browse)
+    useEffect(() => {
+        if (mode !== "browse") return;
         const params = {};
-        if (search)         params.search   = search;
-        if (activeGenre.id) params.genre_id = activeGenre.id;
+        if (search)          params.search    = search;
+        if (activeGenre?.id) params.genre_id = activeGenre.id;
         const t = setTimeout(() => dispatch(fetchMovies(params)), 400);
         return () => clearTimeout(t);
-    }, [search, activeGenre]);
+    }, [search, activeGenre, mode]);
 
-    const baseMovies    = apiMovies.length > 0     ? apiMovies     : [];
-    const bannerMovies  = popularMovies.length > 0 ? popularMovies : baseMovies;
-    const isSearching   = !!(search || activeGenre.id);
+    const baseMovies   = apiMovies.length > 0     ? apiMovies     : [];
+    const bannerMovies = popularMovies.length > 0 ? popularMovies : baseMovies;
 
-    const sectionLabel  = search
+    const sectionLabel = search
         ? `Kết quả: "${search}"`
-        : activeGenre.id
+        : activeGenre
             ? activeGenre.label
-            : "Phim thịnh hành";
+            : "Tất cả phim";
 
     if (moviesLoading && baseMovies.length === 0 && bannerMovies.length === 0)
         return <LoadingSpinner />;
 
-    return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    // CHẾ ĐỘ HOME — banner + hàng ngang
+    if (mode === "home") {
+        return (
+            <SafeAreaView style={styles.container} edges={["top"]}>
+                <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-                {/* ── Auto-sliding Banner ── */}
-                {!isSearching && (
                     <AutoBanner
                         movies={bannerMovies}
                         navigation={navigation}
@@ -256,50 +267,67 @@ const HomeScreen = ({ navigation }) => {
                         favoriteIds={favoriteIds}
                         dispatch={dispatch}
                         width={width}
-                        bannerHeight={BANNER_HEIGHT}
+                        bannerHeight={BANNER_H}
                     />
-                )}
 
-                {/* ── Search + Genre chips ── */}
-                <View style={styles.filterWrap}>
-                    <SearchBar value={search} onChangeText={setSearch} />
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.genreContent}
-                        keyboardShouldPersistTaps="handled"
-                    >
+                    <View style={styles.homeSearchWrap}>
                         <TouchableOpacity
-                            style={[styles.chip, activeGenre.id === "" && styles.chipActive]}
-                            onPress={() => setActiveGenre({ label: "Tất cả", id: "" })}
+                            style={styles.homeSearchFake}
+                            onPress={() => {
+                                setActiveGenre(null);
+                                setSearch("");
+                                setMode("browse");
+                            }}
+                            activeOpacity={0.7}
                         >
-                            <Text style={[styles.chipText, activeGenre.id === "" && styles.chipActiveText]}>Tất cả</Text>
+                            <Ionicons name="search-outline" size={18} color="#555" />
+                            <Text style={styles.homeSearchPlaceholder}>Tìm kiếm phim...</Text>
                         </TouchableOpacity>
-                        {genres.map(g => (
+                    </View>
+
+                    <View style={styles.genreScrollContainer}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                            contentContainerStyle={styles.genreContent}
+                        >
                             <TouchableOpacity
-                                key={g.id}
-                                style={[styles.chip, activeGenre.id === g.id && styles.chipActive]}
-                                onPress={() => setActiveGenre({ label: g.name, id: g.id })}
+                                style={styles.chip}
+                                onPress={() => {
+                                    setActiveGenre(null);
+                                    setSearch("");
+                                    setMode("browse");
+                                }}
                             >
-                                <Text style={[styles.chipText, activeGenre.id === g.id && styles.chipActiveText]}>{g.name}</Text>
+                                <Text style={styles.chipText}>Tất cả</Text>
                             </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
+                            {genres.map(g => (
+                                <TouchableOpacity
+                                    key={g.id}
+                                    style={styles.chip}
+                                    onPress={() => {
+                                        setActiveGenre({ label: g.name, id: g.id });
+                                        setSearch("");
+                                        setMode("browse");
+                                    }}
+                                >
+                                    <Text style={styles.chipText}>{g.name}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
 
-                {/* ── Section title ── */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>{sectionLabel}</Text>
-                </View>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Phim thịnh hành</Text>
+                    </View>
 
-                {/* ── Danh sách phim hàng ngang cuộn ── */}
-                {!isSearching ? (
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.hList}
                     >
-                        {baseMovies.map(item => (
+                        {popularMovies.map(item => (
                             <PosterItem
                                 key={String(item.id)}
                                 movie={item}
@@ -307,39 +335,101 @@ const HomeScreen = ({ navigation }) => {
                             />
                         ))}
                     </ScrollView>
+
+                    <View style={{ height: 32 }} />
+                </ScrollView>
+            </SafeAreaView>
+        );
+    }
+
+    // CHẾ ĐỘ BROWSE — search + chip + grid
+    return (
+        <SafeAreaView style={styles.container} edges={["top"]}>
+
+            {/* Search bar thật (có thể gõ) */}
+            <View style={styles.browseHeader}>
+                <SearchBar
+                    value={search}
+                    onChangeText={setSearch}
+                />
+            </View>
+
+            {/* Chip thể loại với trạng thái active */}
+            <View style={styles.genreScrollContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    contentContainerStyle={styles.genreContent}
+                >
+                    <TouchableOpacity
+                        style={[styles.chip, !activeGenre && !search && styles.chipActive]}
+                        onPress={() => { setActiveGenre(null); setSearch(""); }}
+                    >
+                        <Text style={[styles.chipText, !activeGenre && !search && styles.chipActiveText]}>
+                            Tất cả
+                        </Text>
+                    </TouchableOpacity>
+                    {genres.map(g => (
+                        <TouchableOpacity
+                            key={g.id}
+                            style={[styles.chip, activeGenre?.id === g.id && styles.chipActive]}
+                            onPress={() => { setActiveGenre({ label: g.name, id: g.id }); setSearch(""); }}
+                        >
+                            <Text style={[styles.chipText, activeGenre?.id === g.id && styles.chipActiveText]}>
+                                {g.name}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Section title */}
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{sectionLabel}</Text>
+            </View>
+
+            {/* Grid phim cuộn */}
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.gridScroll}
+            >
+                {moviesLoading ? (
+                    <LoadingSpinner />
+                ) : baseMovies.length === 0 ? (
+                    <Text style={styles.empty}>Không tìm thấy phim nào</Text>
                 ) : (
-                    /* Khi tìm kiếm / lọc thể loại → grid 3 cột */
-                    <View style={[styles.gridWrap]}>
-                        {baseMovies.length === 0 ? (
-                            <Text style={styles.empty}>Không tìm thấy phim nào</Text>
-                        ) : (
-                            baseMovies.map(item => (
-                                <TouchableOpacity
-                                    key={String(item.id)}
-                                    style={[styles.gridItem, { width: GRID_W }]}
-                                    onPress={() => navigation.navigate("MovieDetail", { movie: item })}
-                                    activeOpacity={0.85}
-                                >
-                                    {resolveImg(item) ? (
-                                        <Image source={resolveImg(item)} style={[styles.gridImg, { width: GRID_W, height: GRID_H }]} resizeMode="cover" />
-                                    ) : (
-                                        <View style={[styles.gridImg, styles.gridNoImg, { width: GRID_W, height: GRID_H }]}>
-                                            <Ionicons name="film-outline" size={28} color="#333" />
-                                        </View>
-                                    )}
-                                    {item.rating && (
-                                        <View style={styles.gridBadge}>
-                                            <Text style={styles.gridBadgeText}>⭐ {item.rating}</Text>
-                                        </View>
-                                    )}
-                                    <Text style={styles.gridTitle} numberOfLines={1}>{item.title}</Text>
-                                    <Text style={styles.gridYear}>{item.year}</Text>
-                                </TouchableOpacity>
-                            ))
-                        )}
+                    <View style={styles.gridWrap}>
+                        {baseMovies.map(item => (
+                            <TouchableOpacity
+                                key={String(item.id)}
+                                style={[styles.gridItem, { width: GRID_W }]}
+                                onPress={() => navigation.navigate("MovieDetail", { movie: item })}
+                                activeOpacity={0.85}
+                            >
+                                {resolveImg(item) ? (
+                                    <Image
+                                        source={resolveImg(item)}
+                                        style={[styles.gridImg, { width: GRID_W, height: GRID_H }]}
+                                        resizeMode="cover"
+                                    />
+                                ) : (
+                                    <View style={[styles.gridImg, styles.gridNoImg, { width: GRID_W, height: GRID_H }]}>
+                                        <Ionicons name="film-outline" size={28} color="#333" />
+                                    </View>
+                                )}
+                                {item.rating && (
+                                    <View style={styles.gridBadge}>
+                                        <Text style={styles.gridBadgeText}>⭐ {item.rating}</Text>
+                                    </View>
+                                )}
+                                <Text style={styles.gridTitle} numberOfLines={1}>{item.title}</Text>
+                                <Text style={styles.gridYear}>{item.year}</Text>
+                            </TouchableOpacity>
+                        ))}
                     </View>
                 )}
-
                 <View style={{ height: 32 }} />
             </ScrollView>
         </SafeAreaView>
@@ -347,25 +437,30 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    container:       { flex: 1, backgroundColor: "#0a0a0a" },
-    filterWrap:      { paddingTop: 10 },
-    genreContent:    { paddingHorizontal: 14, paddingVertical: 8, gap: 8 },
-    chip:            { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: "#2a2a2a", backgroundColor: "#1c1c1c", marginRight: 8 },
-    chipActive:      { backgroundColor: "#e50914", borderColor: "#e50914" },
-    chipText:        { color: "#b3b3b3", fontSize: 13 },
-    chipActiveText:  { color: "#fff", fontWeight: "bold" },
-    sectionHeader:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10 },
-    sectionTitle:    { color: "#fff", fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
-    hList:           { paddingHorizontal: 16, paddingBottom: 8 },
-    gridWrap:        { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, gap: 8 },
-    gridItem:        { marginBottom: 14 },
-    gridImg:         { borderRadius: 8, backgroundColor: "#1c1c1c" },
-    gridNoImg:       { justifyContent: "center", alignItems: "center" },
-    gridBadge:       { position: "absolute", top: 6, right: 5, backgroundColor: "rgba(0,0,0,0.75)", paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
-    gridBadgeText:   { color: "#f5a623", fontSize: 10, fontWeight: "bold" },
-    gridTitle:       { color: "#fff", fontSize: 12, fontWeight: "600", marginTop: 5 },
-    gridYear:        { color: "#777", fontSize: 11, marginTop: 2 },
-    empty:           { color: "#6e6e6e", textAlign: "center", width: "100%", marginTop: 40, fontSize: 15 },
+    container:             { flex: 1, backgroundColor: "#0a0a0a" },
+    homeSearchWrap:        { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 },
+    homeSearchFake:        { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#1c1c1c", borderRadius: 10, borderWidth: 1, borderColor: "#2a2a2a", paddingHorizontal: 14, height: 46, },
+    homeSearchPlaceholder: { color: "#555", fontSize: 15 },
+    browseHeader:          { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 4 },
+    genreScrollContainer:  { height: 50, justifyContent: "center" },
+    genreContent:          { flexDirection: "row", alignItems: "center", paddingHorizontal: 14 },
+    chip:                  { height: 34, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1, borderColor: "#2a2a2a", backgroundColor: "#1c1c1c", marginRight: 8, justifyContent: "center", alignItems: "center", },
+    chipActive:            { backgroundColor: "#e50914", borderColor: "#e50914" },
+    chipText:              { color: "#b3b3b3", fontSize: 13 },
+    chipActiveText:        { color: "#fff", fontWeight: "bold" },
+    sectionHeader:         { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
+    sectionTitle:          { color: "#fff", fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
+    hList:                 { paddingHorizontal: 16, paddingBottom: 8 },
+    gridScroll:            { paddingHorizontal: 16 },
+    gridWrap:              { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", gap: 8 },
+    gridItem:              { marginBottom: 14 },
+    gridImg:               { borderRadius: 8, backgroundColor: "#1c1c1c" },
+    gridNoImg:             { justifyContent: "center", alignItems: "center" },
+    gridBadge:             { position: "absolute", top: 6, right: 5, backgroundColor: "rgba(0,0,0,0.75)", paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
+    gridBadgeText:         { color: "#f5a623", fontSize: 10, fontWeight: "bold" },
+    gridTitle:             { color: "#fff", fontSize: 12, fontWeight: "600", marginTop: 5 },
+    gridYear:              { color: "#777", fontSize: 11, marginTop: 2 },
+    empty:                 { color: "#6e6e6e", textAlign: "center", marginTop: 60, fontSize: 15 },
 });
 
 export default HomeScreen;
