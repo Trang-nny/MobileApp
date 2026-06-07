@@ -20,7 +20,7 @@ const LoginScreen = ({ navigation }) => {
     const insets      = useSafeAreaInsets();
 
     useEffect(() => {
-        if (token) {
+        if (token && navigation.isFocused()) {
             navigation.reset({ index: 0, routes: [{ name: "MainTabs" }] });
         }
     }, [token]);

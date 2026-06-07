@@ -1,5 +1,6 @@
 // ── CẤU HÌNH IP ──
 // ĐỔI IP NÀY THEO MÁY CỦA BẠN (ipconfig → IPv4 Address)
+// Dùng chung 1 IP cho cả 3 môi trường: Expo Go (quét QR), Android Studio (nhấn a), Web (nhấn w)
 export const API = "http://192.168.1.59:5555/api/v1";
 
 // ── MOVIES ──
@@ -95,7 +96,7 @@ export const register = (full_name, email, password) => async (dispatch) => {
 
 export const logout = () => ({ type: LOGOUT });
 
-export const updateProfile = (profileData, token) => async (dispatch) => {
+export const updateProfile = (profileData, token) => async (dispatch, getState) => {
     dispatch({ type: SET_AUTH_LOADING, payload: true });
     try {
         const res  = await fetch(`${API}/auth/profile`, {
@@ -105,7 +106,9 @@ export const updateProfile = (profileData, token) => async (dispatch) => {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
-        dispatch({ type: SET_USER,       payload: { ...profileData } });
+        // Giữ lại toàn bộ thông tin user cũ (id, email, role...), chỉ ghi đè những gì vừa sửa
+        const currentUser = getState().user;
+        dispatch({ type: SET_USER,       payload: { ...currentUser, ...profileData } });
         dispatch({ type: SET_AUTH_ERROR, payload: null });
         return { success: true };
     } catch (err) {

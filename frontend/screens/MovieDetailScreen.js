@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import {
     View, Text, Image, ScrollView,
     TouchableOpacity, StyleSheet, Linking,
-    useWindowDimensions,
+    useWindowDimensions, Platform,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { Ionicons }            from "@expo/vector-icons";
@@ -36,7 +36,7 @@ function toWatchableUrl(url) {
 
 const MovieDetailScreen = ({ route, navigation }) => {
     const { width } = useWindowDimensions();
-    const POSTER_W = width * 0.55;
+    const POSTER_W = Platform.OS === "web" ? Math.min(width * 0.55, 280) : width * 0.55;
     const POSTER_H = POSTER_W * 1.45;
 
     const { movie: passed } = route.params;
@@ -73,9 +73,9 @@ const MovieDetailScreen = ({ route, navigation }) => {
             {/* ── Header: backdrop + poster ── */}
             <View style={[styles.headerWrap, { width }]}>
                 {imgSource && (
-                    <Image source={imgSource} style={styles.backdrop} blurRadius={10} />
+                    <Image source={imgSource} style={[styles.backdrop, { width, height: 380 }]} blurRadius={10} />
                 )}
-                <View style={styles.darkOverlay} />
+                <View style={[styles.darkOverlay, { width, height: 380 }]} />
                 {imgSource && (
                     <Image source={imgSource} style={[styles.poster, { width: POSTER_W, height: POSTER_H }]} resizeMode="cover" />
                 )}
@@ -150,8 +150,8 @@ const MovieDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container:     { flex: 1, backgroundColor: "#0a0a0a" },
     headerWrap:    { height: 380, justifyContent: "center", alignItems: "center", overflow: "hidden", backgroundColor: "#000" },
-    backdrop:      { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", opacity: 0.55 },
-    darkOverlay:   { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
+    backdrop:      { position: "absolute", top: 0, left: 0, opacity: 0.55 },
+    darkOverlay:   { position: "absolute", top: 0, left: 0, backgroundColor: "rgba(0,0,0,0.35)" },
     poster:        { borderRadius: 12, borderWidth: 2, borderColor: "rgba(255,255,255,0.12)" },
     favBtn:        { position: "absolute", bottom: 14, right: 16, backgroundColor: "rgba(0,0,0,0.65)", borderRadius: 24, padding: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" },
     content:       { padding: 18 },

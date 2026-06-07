@@ -211,7 +211,7 @@ app.get("/api/v1/movies", (req, res) => {
     var search   = req.query.search   || "";
     var genre_id = req.query.genre_id || "";
     var page     = parseInt(req.query.page)  || 1;
-    var limit    = parseInt(req.query.limit) || 20;
+    var limit    = Math.min(parseInt(req.query.limit) || 20, 200);
     var offset   = (page - 1) * limit;
 
     var sql    = "SELECT DISTINCT m.* FROM movies m";
@@ -224,8 +224,8 @@ app.get("/api/v1/movies", (req, res) => {
     if (search) {
         var keyword = "%" + search + "%";
         sql += genre_id ? " AND" : " WHERE";
-        sql += " (m.title LIKE ? OR m.director LIKE ? OR m.cast_list LIKE ?)";
-        params.push(keyword, keyword, keyword);
+        sql += " m.title LIKE ?";
+        params.push(keyword);
     }
     sql += " ORDER BY m.created_at DESC LIMIT ? OFFSET ?";
     params.push(limit, offset);
@@ -287,9 +287,23 @@ app.get("/api/v1/favorites", authMiddleware, (req, res) => {
                JOIN movies m ON f.movie_id = m.id
                WHERE f.user_id = ?
                ORDER BY f.created_at DESC`;
-    con.query(sql, [req.user.id], (err, results) => {
+    con.query(sql, [req.user.id], (err, movies) => {
         if (err) return res.status(500).send(err);
-        res.status(200).send(results);
+        if (movies.length === 0) return res.status(200).send([]);
+
+        // Thêm genres cho mỗi phim (giống GET /movies)
+        var ids = movies.map(m => m.id);
+        var genreSql = `SELECT mg.movie_id, g.name FROM movie_genres mg
+                        JOIN genres g ON mg.genre_id = g.id
+                        WHERE mg.movie_id IN (?)`;
+        con.query(genreSql, [ids], (err, genreRows) => {
+            if (err) return res.status(500).send(err);
+            var result = movies.map(m => ({
+                ...m,
+                genres: genreRows.filter(g => g.movie_id === m.id).map(g => g.name)
+            }));
+            res.status(200).send(result);
+        });
     });
 });
 

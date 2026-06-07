@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ActivityIndicator, Dimensions, Linking, StatusBar
+    ActivityIndicator, Dimensions, Linking, StatusBar, Platform
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector, useDispatch } from "react-redux";
 import { Ionicons }                 from "@expo/vector-icons";
-import { WebView }                  from "react-native-webview";
 import { saveProgress }             from "../redux/actions";
+
+// WebView chỉ import trên native (không dùng trên web vì không hỗ trợ)
+let WebView = null;
+if (Platform.OS !== "web") {
+    WebView = require("react-native-webview").WebView;
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -111,14 +116,26 @@ const VideoPlayerScreen = ({ route, navigation }) => {
             <View style={styles.videoArea}>
                 {embedHtml ? (
                     <>
-                        <WebView
-                            source={{ html: embedHtml }}
-                            style={styles.webview}
-                            allowsFullscreenVideo
-                            javaScriptEnabled
-                            mediaPlaybackRequiresUserAction={false}
-                            onLoadEnd={() => setLoading(false)}
-                        />
+                        {Platform.OS === "web" ? (
+                            // Web: dùng iframe HTML thông thường
+                            <iframe
+                                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&start=${startAt}`}
+                                style={{ width: "100%", height: "100%", border: "none", background: "#000" }}
+                                allow="autoplay; fullscreen"
+                                allowFullScreen
+                                onLoad={() => setLoading(false)}
+                            />
+                        ) : (
+                            // Native (Android / iOS): dùng WebView
+                            <WebView
+                                source={{ html: embedHtml }}
+                                style={styles.webview}
+                                allowsFullscreenVideo
+                                javaScriptEnabled
+                                mediaPlaybackRequiresUserAction={false}
+                                onLoadEnd={() => setLoading(false)}
+                            />
+                        )}
                         {loading && (
                             <View style={styles.loaderOverlay}>
                                 <ActivityIndicator size="large" color="#e50914" />

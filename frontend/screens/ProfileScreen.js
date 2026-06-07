@@ -118,7 +118,7 @@ const ProfileScreen = ({ navigation }) => {
                         icon="heart"
                         label="Phim yêu thích"
                         desc="Danh sách phim đã lưu"
-                        onPress={() => navigation.navigate("Favorites")}
+                        onPress={() => navigation.navigate("MainTabs", { screen: "Favorites" })}
                     />
                     <MenuItem
                         icon="time"

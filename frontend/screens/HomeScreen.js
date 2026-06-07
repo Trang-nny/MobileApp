@@ -206,7 +206,17 @@ const HomeScreen = ({ navigation }) => {
     const [genres,      setGenres]      = useState([]);
     const [mode,        setMode]        = useState("home");
 
-    // Nhấn icon Trang Chủ ở tab bar → reset hoàn toàn về home
+    // Load dữ liệu khi mount — chạy ngay cả trên web (useFocusEffect không fire trên web)
+    useEffect(() => {
+        dispatch(fetchPopularMovies());
+        dispatch(fetchMovies({}));
+        fetch(`${API}/genres`)
+            .then(r => r.json())
+            .then(data => { if (Array.isArray(data)) setGenres(data); })
+            .catch(() => {});
+    }, []);
+
+    // Nhấn icon Trang Chủ ở tab bar → reset hoàn toàn về home (native)
     useFocusEffect(
         useCallback(() => {
             dispatch(fetchPopularMovies());
