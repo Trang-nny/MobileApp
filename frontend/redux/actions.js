@@ -1,6 +1,5 @@
 // ── CẤU HÌNH IP ──
 // ĐỔI IP NÀY THEO MÁY CỦA BẠN (ipconfig → IPv4 Address)
-// Dùng chung 1 IP cho cả 3 môi trường: Expo Go (quét QR), Android Studio (nhấn a), Web (nhấn w)
 export const API = "http://192.168.1.59:5555/api/v1";
 
 // ── MOVIES ──
@@ -96,7 +95,7 @@ export const register = (full_name, email, password) => async (dispatch) => {
 
 export const logout = () => ({ type: LOGOUT });
 
-export const updateProfile = (profileData, token) => async (dispatch, getState) => {
+export const updateProfile = (profileData, token) => async (dispatch) => {
     dispatch({ type: SET_AUTH_LOADING, payload: true });
     try {
         const res  = await fetch(`${API}/auth/profile`, {
@@ -106,9 +105,7 @@ export const updateProfile = (profileData, token) => async (dispatch, getState) 
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
-        // Giữ lại toàn bộ thông tin user cũ (id, email, role...), chỉ ghi đè những gì vừa sửa
-        const currentUser = getState().user;
-        dispatch({ type: SET_USER,       payload: { ...currentUser, ...profileData } });
+        dispatch({ type: SET_USER,       payload: { ...profileData } });
         dispatch({ type: SET_AUTH_ERROR, payload: null });
         return { success: true };
     } catch (err) {
@@ -207,4 +204,99 @@ export const removeHistory = (movieId, token) => async (dispatch) => {
         });
         if (res.ok) dispatch({ type: REMOVE_HISTORY, payload: movieId });
     } catch (err) {}
+};
+
+// ── ADMIN MANAGEMENT ACTIONS ──
+export const SET_ADMIN_MOVIES  = "SET_ADMIN_MOVIES";
+export const SET_ADMIN_GENRES  = "SET_ADMIN_GENRES";
+
+export const fetchAdminGenres = () => async (dispatch) => {
+    try {
+        const res = await fetch(`${API}/genres`);
+        const data = await res.json();
+        dispatch({ type: SET_ADMIN_GENRES, payload: data });
+    } catch (err) {
+        console.log("Lỗi tải thể loại:", err);
+    }
+};
+
+export const addAdminGenre = (name, token) => async (dispatch) => {
+    const res = await fetch(`${API}/admin/genres`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    dispatch(fetchAdminGenres());
+};
+
+export const updateAdminGenre = (id, name, token) => async (dispatch) => {
+    const res = await fetch(`${API}/admin/genres/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    dispatch(fetchAdminGenres());
+};
+
+export const deleteAdminGenre = (id, token) => async (dispatch) => {
+    const res = await fetch(`${API}/admin/genres/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error();
+    dispatch(fetchAdminGenres());
+};
+
+export const fetchAdminMovies = () => async (dispatch) => {
+    try {
+        const res = await fetch(`${API}/movies?limit=100`);
+        const data = await res.json();
+        dispatch({ type: SET_ADMIN_MOVIES, payload: data });
+    } catch (err) {
+        console.log("Lỗi tải phim:", err);
+    }
+};
+
+export const addAdminMovie = (movieBody, token) => async (dispatch) => {
+    const res = await fetch(`${API}/admin/movies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(movieBody),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    
+    dispatch(fetchAdminMovies());
+    dispatch(fetchMovies());
+    dispatch(fetchPopularMovies());
+};
+
+export const updateAdminMovie = (id, movieBody, token) => async (dispatch) => {
+    const res = await fetch(`${API}/admin/movies/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(movieBody),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+
+    dispatch(fetchAdminMovies());
+    dispatch(fetchMovies());
+    dispatch(fetchPopularMovies());
+};
+
+export const deleteAdminMovie = (id, token) => async (dispatch) => {
+    const res = await fetch(`${API}/admin/movies/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error();
+
+    dispatch(fetchAdminMovies());
+    dispatch(fetchMovies());
+    dispatch(fetchPopularMovies());
 };

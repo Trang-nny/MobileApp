@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
     View, Text, TouchableOpacity, StyleSheet, FlatList,
-    Alert, ActivityIndicator,
+    Alert, ActivityIndicator, Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons }     from "@expo/vector-icons";
@@ -35,28 +35,41 @@ export default function AdminUsersScreen() {
         if (user.id === myId) {
             return Alert.alert("Không thể xóa", "Bạn không thể xóa tài khoản của chính mình");
         }
-        Alert.alert(
-            "Xóa người dùng",
-            `Xóa tài khoản "${user.full_name}"?\nThao tác này không thể hoàn tác.`,
-            [
-                { text: "Huỷ", style: "cancel" },
-                {
-                    text: "Xóa", style: "destructive",
-                    onPress: async () => {
-                        try {
-                            const res = await fetch(`${API}/admin/users/${user.id}`, {
-                                method: "DELETE",
-                                headers: { Authorization: `Bearer ${token}` },
-                            });
-                            if (!res.ok) throw new Error();
-                            loadUsers();
-                        } catch {
-                            Alert.alert("Lỗi", "Không thể xóa người dùng");
-                        }
+
+        const message = `Xóa tài khoản "${user.full_name}"?\nThao tác này không thể hoàn tác.`;
+
+        if (Platform.OS === "web") {
+            const confirmDelete = window.confirm(message);
+            if (confirmDelete) {
+                executeDelete(user);
+            }
+        } else {
+            Alert.alert(
+                "Xóa người dùng",
+                message,
+                [
+                    { text: "Huỷ", style: "cancel" },
+                    {
+                        text: "Xóa", style: "destructive",
+                        onPress: () => executeDelete(user),
                     },
-                },
-            ]
-        );
+                ]
+            );
+        }
+    };
+
+    // Hàm gọi API thực hiện xóa user
+    const executeDelete = async (user) => {
+        try {
+            const res = await fetch(`${API}/admin/users/${user.id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error();
+            loadUsers();
+        } catch {
+            Alert.alert("Lỗi", "Không thể xóa người dùng");
+        }
     };
 
     const formatDate = (dateStr) => {

@@ -2,8 +2,11 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
     View, Text, StyleSheet,
     TouchableOpacity, ScrollView, Image,
-    Animated, useWindowDimensions,
+    Animated, useWindowDimensions, Platform,
 } from "react-native";
+
+// Web không hỗ trợ useNativeDriver
+const USE_NATIVE_DRIVER = Platform.OS !== "web";
 import { SafeAreaView }             from "react-native-safe-area-context";
 import { LinearGradient }           from "expo-linear-gradient";
 import { useDispatch, useSelector }  from "react-redux";
@@ -45,8 +48,8 @@ const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch, width, b
 
     const goTo = (next) => {
         Animated.sequence([
-            Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
-            Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+            Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: USE_NATIVE_DRIVER }),
+            Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: USE_NATIVE_DRIVER }),
         ]).start();
         setIdx(next);
     };
@@ -57,8 +60,8 @@ const AutoBanner = ({ movies, navigation, token, favoriteIds, dispatch, width, b
             setIdx(prev => {
                 const next = (prev + 1) % TOP5.length;
                 Animated.sequence([
-                    Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
-                    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+                    Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: USE_NATIVE_DRIVER }),
+                    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: USE_NATIVE_DRIVER }),
                 ]).start();
                 return next;
             });

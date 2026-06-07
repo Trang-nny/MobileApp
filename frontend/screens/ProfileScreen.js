@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, Platform } from "react-native";
 import { SafeAreaView }   from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
@@ -34,10 +34,25 @@ const ProfileScreen = ({ navigation }) => {
         : "?";
 
     const handleLogout = () => {
-        Alert.alert("Đăng xuất", "Bạn có chắc muốn đăng xuất?", [
-            { text: "Huỷ", style: "cancel" },
-            { text: "Đăng xuất", style: "destructive", onPress: () => dispatch(logout()) },
-        ]);
+        if (Platform.OS === "web") {
+            const confirmLogout = window.confirm("Bạn có chắc muốn đăng xuất?");
+            if (confirmLogout) {
+                dispatch(logout());
+                navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+            }
+        } else {
+            Alert.alert("Đăng xuất", "Bạn có chắc muốn đăng xuất?", [
+                { text: "Huỷ", style: "cancel" },
+                { 
+                    text: "Đăng xuất", 
+                    style: "destructive", 
+                    onPress: () => {
+                        dispatch(logout());
+                        navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+                    } 
+                },
+            ]);
+        }
     };
 
     return (
@@ -118,7 +133,7 @@ const ProfileScreen = ({ navigation }) => {
                         icon="heart"
                         label="Phim yêu thích"
                         desc="Danh sách phim đã lưu"
-                        onPress={() => navigation.navigate("MainTabs", { screen: "Favorites" })}
+                        onPress={() => navigation.navigate("Favorites")}
                     />
                     <MenuItem
                         icon="time"

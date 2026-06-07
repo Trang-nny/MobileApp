@@ -4,6 +4,20 @@ import {
     StyleSheet, Alert, KeyboardAvoidingView,
     Platform, ScrollView, StatusBar,
 } from "react-native";
+
+// Helper: shadow tương thích cả web lẫn native
+function shadow(color, offsetY, opacity, radius, elevation) {
+    if (Platform.OS === "web") {
+        return { boxShadow: `0px ${offsetY}px ${radius}px ${color}` };
+    }
+    return {
+        shadowColor: color,
+        shadowOffset: { width: 0, height: offsetY },
+        shadowOpacity: opacity,
+        shadowRadius: radius,
+        elevation,
+    };
+}
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
@@ -219,11 +233,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#e50914",
         justifyContent: "center", alignItems: "center",
         marginBottom: 14,
-        shadowColor: "#e50914",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.45,
-        shadowRadius: 16,
-        elevation: 10,
+        ...shadow("#e50914", 8, 0.45, 16, 10),
     },
     logoEmoji:   { fontSize: 36 },
     logoName:    { color: "#fff", fontSize: 30, fontWeight: "900", letterSpacing: -0.5 },
@@ -234,10 +244,7 @@ const styles = StyleSheet.create({
         borderRadius: 16, padding: 24,
         borderWidth: 1, borderColor: "#222",
         marginBottom: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5, shadowRadius: 12,
-        elevation: 6,
+        ...shadow("#000", 4, 0.5, 12, 6),
     },
     cardTitle: { color: "#fff", fontSize: 22, fontWeight: "800", marginBottom: 20, letterSpacing: -0.3 },
 

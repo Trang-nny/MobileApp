@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from "react";
 import {
     View, Text, FlatList, StyleSheet,
-    TouchableOpacity, Alert, Image
+    TouchableOpacity, Alert, Image, Platform
 } from "react-native";
 import { SafeAreaView }       from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -36,7 +36,6 @@ function formatTime(seconds) {
 }
 
 // ─── HistoryItem ──
-
 const HistoryItem = ({ item, onPress, onDelete }) => {
     const source = resolveSource(item);
     const progressPct = Math.min(
@@ -113,7 +112,6 @@ const item_s = StyleSheet.create({
 });
 
 // ─── HistoryScreen ────
-
 const HistoryScreen = ({ navigation }) => {
     const dispatch       = useDispatch();
     const token          = useSelector(s => s.token);
@@ -128,18 +126,26 @@ const HistoryScreen = ({ navigation }) => {
 
     const handleDelete = (item) => {
         const movieId = item.movie_id ?? item.id;
-        Alert.alert(
-            "Xoá khỏi lịch sử",
-            `Xoá "${item.title}" khỏi lịch sử xem?`,
-            [
-                { text: "Huỷ", style: "cancel" },
-                {
-                    text: "Xoá",
-                    style: "destructive",
-                    onPress: () => dispatch(removeHistory(movieId, token)),
-                },
-            ]
-        );
+        
+        if (Platform.OS === "web") {
+            const confirmDelete = window.confirm(`Xoá "${item.title}" khỏi lịch sử xem?`);
+            if (confirmDelete) {
+                dispatch(removeHistory(movieId, token));
+            }
+        } else {
+            Alert.alert(
+                "Xoá khỏi lịch sử",
+                `Xoá "${item.title}" khỏi lịch sử xem?`,
+                [
+                    { text: "Huỷ", style: "cancel" },
+                    {
+                        text: "Xoá",
+                        style: "destructive",
+                        onPress: () => dispatch(removeHistory(movieId, token)),
+                    },
+                ]
+            );
+        }
     };
 
     if (!token) {

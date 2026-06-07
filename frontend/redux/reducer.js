@@ -4,6 +4,7 @@ import {
     SET_USER, SET_TOKEN, SET_AUTH_LOADING, SET_AUTH_ERROR, LOGOUT,
     SET_FAVORITES, SET_FAVORITE_MOVIES, ADD_FAVORITE, ADD_FAVORITE_MOVIE, REMOVE_FAVORITE, SET_FAVORITES_LOADING,
     SET_HISTORY, REMOVE_HISTORY, SET_HISTORY_LOADING,
+    SET_ADMIN_MOVIES, SET_ADMIN_GENRES
 } from "./actions";
 
 const initialState = {
@@ -21,6 +22,8 @@ const initialState = {
     favoritesLoading: false,
     history:          [],
     historyLoading:   false,
+    adminMovies:      [],
+    adminGenres:      [],
 };
 
 export default function reducer(state = initialState, action) {
@@ -47,6 +50,8 @@ export default function reducer(state = initialState, action) {
         case SET_HISTORY:           return { ...state, history:          action.payload };
         case REMOVE_HISTORY:        return { ...state, history: state.history.filter(m => Number(m.movie_id ?? m.id) !== Number(action.payload)) };
         case SET_HISTORY_LOADING:   return { ...state, historyLoading:   action.payload };
+        case SET_ADMIN_MOVIES:      return { ...state, adminMovies:      action.payload };
+        case SET_ADMIN_GENRES:      return { ...state, adminGenres:      action.payload };
         default:                    return state;
     }
 }

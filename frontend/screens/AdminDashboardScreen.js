@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
     View, Text, StyleSheet,
-    ScrollView, Alert, ActivityIndicator, Image,
+    ScrollView, Alert, ActivityIndicator, Image, Platform, useWindowDimensions
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons }     from "@expo/vector-icons";
@@ -17,9 +17,13 @@ const StatCard = ({ icon, label, value, color }) => (
     </View>
 );
 
-// ── Hàng phim top ───
+// ── Hàng phim top lượt xem ───
 const TopMovieRow = ({ index, movie }) => {
-    const rankColor = index === 0 ? "#f5a623" : index === 1 ? "#b0b8c1" : index === 2 ? "#cd7f32" : "#555";
+    const rankColor = 
+            index === 0 ? "#ffb703" :
+            index === 1 ? "#ffffff" :
+            index === 2 ? "#fb8500" :
+            "#555555";
     return (
         <View style={styles.topRow}>
             <Text style={[styles.topRank, { color: rankColor }]}>#{index + 1}</Text>
@@ -46,6 +50,7 @@ const TopMovieRow = ({ index, movie }) => {
     );
 };
 
+// ── Hàng phim top đánh giá ───
 const RatingRow = ({ index, movie }) => (
     <View style={styles.topRow}>
         <Text style={[styles.topRank, { color: "#f5a623" }]}>#{index + 1}</Text>
@@ -72,6 +77,7 @@ const RatingRow = ({ index, movie }) => (
 );
 
 export default function AdminDashboardScreen() {
+    const { height: windowHeight } = useWindowDimensions();
     const token = useSelector(s => s.token);
     const user  = useSelector(s => s.user);
 
@@ -116,8 +122,15 @@ export default function AdminDashboardScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["bottom"]}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                style={[
+                    styles.scrollView,
+                    Platform.OS === "web" ? { height: windowHeight } : { flex: 1 }
+                ]}
+                contentContainerStyle={styles.scrollContent}
+            >
                 {/* ── Header ── */}
                 <View style={styles.header}>
                     <View>
@@ -167,15 +180,30 @@ export default function AdminDashboardScreen() {
                         )}
                     </>
                 )}
-
-                <View style={{ height: 32 }} />
+                <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container:    { flex: 1, backgroundColor: "#0a0a0a" },
+    container: { 
+        flex: 1, 
+        backgroundColor: "#0a0a0a",
+    },
+    scrollView: {
+        ...Platform.select({
+            web: {
+                overflowY: "auto",
+            },
+            default: {
+                flex: 1
+            }
+        })
+    },
+    scrollContent: { 
+        paddingBottom: 20,
+    },
 
     header:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center",
                     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
