@@ -162,17 +162,6 @@ const LoginScreen = ({ navigation }) => {
                             <Text style={styles.secondaryBtnText}>Tạo tài khoản mới</Text>
                         </TouchableOpacity>
                     </View>
-
-                    {/* Footer */}
-                    <Text style={styles.footer}>
-                        Chưa có tài khoản?{" "}
-                        <Text
-                            style={styles.footerLink}
-                            onPress={() => navigation.navigate("Register")}
-                        >
-                            Đăng ký ngay
-                        </Text>
-                    </Text>
                 </ScrollView>
             </KeyboardAvoidingView>
         </>

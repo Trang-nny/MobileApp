@@ -204,13 +204,6 @@ const RegisterScreen = ({ navigation }) => {
                             <Text style={styles.secondaryBtnText}>Đã có tài khoản? Đăng nhập</Text>
                         </TouchableOpacity>
                     </View>
-
-                    <Text style={styles.footer}>
-                        Đã có tài khoản?{" "}
-                        <Text style={styles.footerLink} onPress={() => navigation.navigate("Login")}>
-                            Đăng nhập
-                        </Text>
-                    </Text>
                 </ScrollView>
             </KeyboardAvoidingView>
         </>
