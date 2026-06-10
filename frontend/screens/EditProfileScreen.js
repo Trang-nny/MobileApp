@@ -55,7 +55,7 @@ const EditProfileScreen = ({ navigation }) => {
             payload.new_password     = newPassword;
         }
 
-        const result = await dispatch(updateProfile(payload, token));
+        const result = await dispatch(updateProfile(payload, token, user));
         if (result.success) {
             Alert.alert("Thành công", "Cập nhật hồ sơ thành công!", [
                 { text: "OK", onPress: () => navigation.goBack() }

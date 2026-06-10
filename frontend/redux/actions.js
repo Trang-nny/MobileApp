@@ -95,7 +95,7 @@ export const register = (full_name, email, password) => async (dispatch) => {
 
 export const logout = () => ({ type: LOGOUT });
 
-export const updateProfile = (profileData, token) => async (dispatch) => {
+export const updateProfile = (profileData, token, currentUser) => async (dispatch) => {
     dispatch({ type: SET_AUTH_LOADING, payload: true });
     try {
         const res  = await fetch(`${API}/auth/profile`, {
@@ -105,7 +105,7 @@ export const updateProfile = (profileData, token) => async (dispatch) => {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
-        dispatch({ type: SET_USER,       payload: { ...profileData } });
+        dispatch({ type: SET_USER, payload: { ...currentUser, ...profileData } });
         dispatch({ type: SET_AUTH_ERROR, payload: null });
         return { success: true };
     } catch (err) {
